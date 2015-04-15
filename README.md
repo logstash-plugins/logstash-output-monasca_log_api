@@ -35,7 +35,24 @@ Run
 bin/plugin install --no-verify
 ```
 
-## Start logstash with output plugin
+## Start logstash output plugin
+### Simple Configuration File
+```bash
+input {
+  stdin { }
+}
+output {
+  monasca_api {
+    monasca_host => "192.168.10.4"
+    monasca_port => 8080
+    keystone_host => "192.168.10.5"
+    keystone_port => 5000
+    tenant => "mini-mon"
+    username => "mini-mon"
+    password => "password"
+  }
+}
+```
 Run
 ```bash
 bin/logstash -e 'input {stdin{}} output {monasca_api{}}'
