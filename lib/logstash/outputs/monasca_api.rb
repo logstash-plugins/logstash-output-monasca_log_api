@@ -5,7 +5,7 @@ require 'logstash/namespace'
 # relative requirements
 require_relative 'monasca/monasca_api_client'
 require_relative 'keystone/keystone_client'
-require_relative 'helper/user'
+require_relative 'keystone/user'
 
 # This Logstash Output plugin, sends events to monasca-api.
 # It authenticates against keystone and gets a token.
@@ -27,15 +27,23 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
 
   public
   def register
-    user = User.new @tenant, @username, @password
-  	@monasca_api_client = MonascaApiClient.new monasca_host, monasca_port
-    @keystone_client = KeystoneClient.new keystone_host, keystone_port, user
+    begin
+      user = User.new @tenant, @username, @password
+  	  @monasca_api_client = MonascaApiClient.new monasca_host, monasca_port
+      @keystone_client = KeystoneClient.new keystone_host, keystone_port, user
+    rescue => e
+      @logger.error("Failed to authenticate or connect to monasca-api: #{e.message}")
+    end
   end # def register
 
   public
   def receive(event)
     return unless output?(event)
-    @monasca_api_client.send_log(event, @keystone_client.get_token)
+    begin
+      @monasca_api_client.send_log(event, @keystone_client.get_token)
+    rescue => e
+      @logger.error("Failed to send event to monasca-api: #{e.message}")
+    end
   end # def receive
 
 end # class LogStash::Outputs::Example

@@ -1,14 +1,14 @@
 require_relative '../spec_helper'
 
-describe User do
+describe LogStash::Outputs::Helper::User do
 
   before :each do
-    @user = User.new 'mini-mon', 'admin', 'qweqwe'
+    @user = LogStash::Outputs::Helper::User.new 'mini-mon', 'admin', 'qweqwe'
   end
 
   describe "#new" do
     it "takes three parameters and returns a User object" do
-      @user.should be_an_instance_of User
+      @user.should be_an_instance_of LogStash::Outputs::Helper::User
     end
   end
 

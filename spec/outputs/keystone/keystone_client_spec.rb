@@ -1,14 +1,14 @@
 require_relative '../spec_helper'
 
-describe KeystoneClient do
+describe LogStash::Outputs::Keystone::KeystoneClient do
 
   before :each do
-    @keystone_client = KeystoneClient.new('host', 0, double("User"))
+    @keystone_client = LogStash::Outputs::Keystone::KeystoneClient.new('host', 0, double("User"))
   end
 
   describe "#new" do
     it "takes two parameters and returns a KeystoneClient object" do
-      @keystone_client.should be_an_instance_of KeystoneClient
+      @keystone_client.should be_an_instance_of LogStash::Outputs::Keystone::KeystoneClient
     end
   end
 
