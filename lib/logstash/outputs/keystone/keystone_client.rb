@@ -1,3 +1,5 @@
+require 'logstash/environment'
+
 require_relative '../helper/url_helper'
 require_relative 'user'
 
@@ -12,8 +14,8 @@ module LogStash::Outputs
     
       # Authenticate against keystone and get token back
       def get_token
-          json_resp = JSON.parse(authenticate)
-      	  json_resp['access']['token']['id']    
+        json_resp = handle_response(authenticate)
+      	json_resp['access']['token']['id']
       end
     
       private
@@ -23,6 +25,15 @@ module LogStash::Outputs
     
       def authenticate
         @keystone_client['tokens'].post(get_auth_hash, :content_type => 'application/json', :accept => 'application/json')
+      end
+
+      def handle_response response
+        raise LogStash::PluginLoadingError, "Failed to authorize user" unless response.is_a? String and response.include? ('token')
+        parse_string_to_json response
+      end
+
+      def parse_string_to_json response
+        JSON.parse(response)
       end
     
     end

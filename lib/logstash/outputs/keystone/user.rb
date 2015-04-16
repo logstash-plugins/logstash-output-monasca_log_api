@@ -1,5 +1,5 @@
 module LogStash::Outputs
-  module Helper
+  module Keystone
     class User
       attr_accessor :tenant, :username, :password
       def initialize tenant, username, password

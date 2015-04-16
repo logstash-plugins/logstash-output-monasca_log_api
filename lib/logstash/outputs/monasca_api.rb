@@ -27,16 +27,12 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
 
   public
   def register
-    begin
-      user = User.new @tenant, @username, @password
-  	  @monasca_api_client = MonascaApiClient.new monasca_host, monasca_port
-      @keystone_client = KeystoneClient.new keystone_host, keystone_port, user
-    rescue => e
-      @logger.error("Failed to authenticate or connect to monasca-api: #{e.message}")
-    end
+    user = LogStash::Outputs::Keystone::User.new @tenant, @username, @password
+    @keystone_client = LogStash::Outputs::Keystone::KeystoneClient.new keystone_host, keystone_port, user
+    get_token
+    @monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new monasca_host, monasca_port
   end # def register
 
-  public
   def receive(event)
     return unless output?(event)
     begin
@@ -46,4 +42,8 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
     end
   end # def receive
 
+  private
+  def get_token
+    @keystone_client.get_token
+  end
 end # class LogStash::Outputs::Example
