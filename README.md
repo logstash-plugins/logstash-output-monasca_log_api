@@ -15,14 +15,20 @@ git clone git@estscm1.intern.est.fujitsu.com:teammonitoring/logstash-output-mona
 
 ## Build project
 ```bash
-bundle install
+rake build
 ```
 
+## Run unit tests
+```bash
+rake test
+```
+
+Create Gemfile
 ```bash
 gem build logstash-output-monasca_api.gemspec
 ```
 
-## Deploy to logstash
+## Deploy Gemfile to logstash
 
 Download logstash (>=1.5.0.rc2) [http://download.elastic.co/logstash/logstash/logstash-1.5.0.rc2.tar.gz]
 
@@ -55,5 +61,5 @@ output {
 ```
 Run
 ```bash
-bin/logstash -e 'input {stdin{}} output {monasca_api{}}'
+bin/logstash -f path-to-configuration-file
 ```
