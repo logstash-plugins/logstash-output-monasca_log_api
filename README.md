@@ -83,3 +83,5 @@ bin/logstash -f path-to-configuration-file
 * Language translations (Replace hardcoded String messages with a configuration/language file)
 * Exception handling
 * Contribute to logstash [http://www.elastic.co/guide/en/logstash/master/_how_to_write_a_logstash_output_plugin.html#_contributing_your_source_code_to_ulink_url_https_github_com_logstash_plugins_logstash_plugins_ulink_4]
+* Performance optimization (X-Auth-Token caching)
+* Additional configuration params like "dimensions"
