@@ -68,8 +68,8 @@ output {
     monasca_port => 8080
     keystone_host => "192.168.10.5"
     keystone_port => 5000
-    tenant => "mini-mon"
-    username => "mini-mon"
+    project_id => "123456"
+    user_id => "987654"
     password => "password"
   }
 }
