@@ -16,12 +16,9 @@ module LogStash::Outputs
     
       # Send log events to monasca-api, requires token
       def send_log(event, token, dimensions)
-        begin
-          response = request(event, token, dimensions)
-          handle_response(response)
-        rescue => e
-          handle_error(e)
-        end
+        #begin
+        request(event, token, dimensions)
+        @logger.debug("Successfully send event=#{event}, with token=#{token} and dimensions=#{dimensions} to monasca-api")
       end
 
       private
@@ -40,22 +37,6 @@ module LogStash::Outputs
             :x_auth_token => token, 
             :content_type => 'application/json'
           )
-        end
-      end
-
-      def handle_error(response)
-        @logger.error("Failed to send event to monasca-api, response=#{response}")
-        false
-      end
-
-      def handle_response(response)
-        case response.code
-        when 204
-          @logger.debug("Successfully send event to monasca-api")
-          true
-        else
-          @logger.error("Failed to send event to monasca-api, body=#{response.body}")
-          false
         end
       end
     

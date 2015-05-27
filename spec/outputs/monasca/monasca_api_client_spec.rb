@@ -22,21 +22,21 @@ describe LogStash::Outputs::Monasca::MonascaApiClient do
   	  response = stub_response(204, nil, nil)
 
       @monasca_client.stub(:request).and_return(response)
-  	  @monasca_client.send_log('event-message', 'abadcf984cf7401e88579d393317b0d9', 'dimensions').should be_true
+  	  expect {@monasca_client.send_log('event-message', 'abadcf984cf7401e88579d393317b0d9', 'dimensions')}.not_to raise_exception
     end
 
   	it "failed to connect to monasca-api" do
   	  response = stub_response(404, nil, "Connection refused")
 
       @monasca_client.stub(:request).and_raise(response)
-  	  @monasca_client.send_log('event-message', 'abadcf984cf7401e88579d393317b0d9', 'dimensions').should be_false
+  	  expect {@monasca_client.send_log('event-message', 'abadcf984cf7401e88579d393317b0d9', 'dimensions')}.to raise_exception
     end
 
   	it "with false authentication-token" do
   	  response = stub_response(401, nil, "{\"unauthorized\":{\"code\":401,\"message\":\"Authorization failed for user token: xxabadcf984cf7401e88579d393317b0d9 xxabadcf984cf7401e88579d393317b0d9\",\"details\":\"\",\"internal_code\":\"330977495d9aa267\"}}")
 
       @monasca_client.stub(:request).and_raise(response)
-  	  @monasca_client.send_log('event-message', 'bcddcf984cf7401e88579d393317b0d9', 'dimensions').should be_false
+  	  expect {@monasca_client.send_log('event-message', 'bcddcf984cf7401e88579d393317b0d9', 'dimensions')}.to raise_exception
     end
   end
 

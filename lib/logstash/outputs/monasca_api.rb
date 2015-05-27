@@ -32,7 +32,7 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
   def register
     @keystone_client = LogStash::Outputs::Keystone::KeystoneClient.new keystone_host, keystone_port
     @monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new monasca_host, monasca_port
-    get_token
+    @token = get_token
   end # def register
 
   def receive(log)
@@ -44,19 +44,9 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
   private
   def check_token
     now = DateTime.now + Rational(1, 1440)
-    unless @token
+    if now >= @token.expire_at
       @token = get_token
-      @logger.debug("New token=#{@token} created")
-    else
-      unless @token.id and @token.expire_at
-        @token = get_token
-        @logger.debug("token.id or token.expire_at unknown. New token=#{@token} created")
-      else
-        if now >= @token.expire_at
-          @logger.debug("token expired. New token will be generated")
-          @token = get_token
-        end
-      end
+      @logger.debug("token expired. New token requested")
     end
   end
 
@@ -65,6 +55,6 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
   end
 
   def get_token
-    @token = @keystone_client.authenticate(project_id, user_id, password)
+    @keystone_client.authenticate(project_id, user_id, password)
   end
 end # class LogStash::Outputs::Example

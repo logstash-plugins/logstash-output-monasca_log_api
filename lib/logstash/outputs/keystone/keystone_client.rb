@@ -18,15 +18,9 @@ module LogStash::Outputs
       end
 
       def authenticate(project_id, user_id, password)
-
         auth_hash = generate_hash(project_id, user_id, password)
-        begin
-          response = request(auth_hash)
-          handle_response(response)
-        rescue => e
-          handle_error(e)
-        end
-        
+        response = request(auth_hash)
+        handle_response(response)
       end
 
       private
@@ -49,17 +43,9 @@ module LogStash::Outputs
           expires_at = DateTime.parse(JSON.parse(response.body)["token"]["expires_at"])
           @logger.debug("Authentication succeed: code=#{response.code}, auth-token=#{response.headers[:x_subject_token]}, expires_at=#{expires_at.to_time}")
           Token.new(response.headers[:x_subject_token], expires_at)
-        else
-          @logger.error("Failed to authenticate against keystone: code=#{response.code}")
-          Token.new(nil, nil)
         end
       end
 
-      def handle_error(response)
-        @logger.error("Failed to authenticate against keystone: response=#{response}")
-        Token.new(nil, nil)
-      end
-         
     end
   end
 end
