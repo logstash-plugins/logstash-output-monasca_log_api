@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.require_paths = ['lib']
 
   # Files
-  s.files = ["lib/logstash/outputs/monasca_api.rb"]
+  s.files = `git ls-files`.split($\)
   
   # Tests
   s.test_files = s.files.grep(%r{^(test|spec|features)/})
