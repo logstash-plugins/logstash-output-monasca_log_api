@@ -38,7 +38,7 @@ module LogStash::Outputs
       def handle_response(response)
         case response.code
         when 204
-          @logger.info("Successfully send event to monasca-api")
+          @logger.debug("Successfully send event to monasca-api")
           true
         else
           @logger.error("Failed to send event to monasca-api, body=#{response.body}")

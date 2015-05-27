@@ -24,24 +24,45 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
   config :user_id, :validate => :string, :required => true
   config :password, :validate => :string, :required => true
 
+  attr_accessor :token
+
   public
   def register
     @keystone_client = LogStash::Outputs::Keystone::KeystoneClient.new keystone_host, keystone_port
-    token = get_token
     @monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new monasca_host, monasca_port
+    get_token
   end # def register
 
   def receive(log)
     return unless output?(log)
-    begin
-      @monasca_api_client.send_log(log, get_token)
-    rescue => e
-      @logger.error("Failed to send log to monasca-api: #{e.message}")
-    end
+    check_token
+    send_log(log, @token.id)
   end # def receive
 
   private
+  def check_token
+    now = DateTime.now + Rational(1, 1440)
+    unless @token
+      @token = get_token
+      @logger.debug("New token=#{@token} created")
+    else
+      unless @token.id and @token.expire_at
+        @token = get_token
+        @logger.debug("token.id or token.expire_at unknown. New token=#{@token} created")
+      else
+        if now >= @token.expire_at
+          @logger.debug("token expired. New token will be generated")
+          @token = get_token
+        end
+      end
+    end
+  end
+
+  def send_log(log, token_id)
+    @monasca_api_client.send_log(log, token_id) if log and token_id
+  end
+
   def get_token
-    @keystone_client.authenticate(project_id, user_id, password).id
+    @token = @keystone_client.authenticate(project_id, user_id, password)
   end
 end # class LogStash::Outputs::Example

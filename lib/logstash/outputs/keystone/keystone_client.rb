@@ -47,7 +47,7 @@ module LogStash::Outputs
         case response.code
         when 201
           expires_at = DateTime.parse(JSON.parse(response.body)["token"]["expires_at"])
-          @logger.info("Authentication succeed: code=#{response.code}, auth-token=#{response.headers[:x_subject_token]}, expires_at=#{expires_at.to_time}")
+          @logger.debug("Authentication succeed: code=#{response.code}, auth-token=#{response.headers[:x_subject_token]}, expires_at=#{expires_at.to_time}")
           Token.new(response.headers[:x_subject_token], expires_at)
         else
           @logger.error("Failed to authenticate against keystone: code=#{response.code}")
