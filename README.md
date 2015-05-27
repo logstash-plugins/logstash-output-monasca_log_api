@@ -28,6 +28,11 @@ rake build
 rake test
 ```
 
+### Run specified test
+```bash
+bundle exec rspec spec/outputs/monasca/monasca_api_client_spec.rb
+```
+
 ## Deploy Gemfile to logstash
 
 First we need to create a Gemfile.
@@ -71,6 +76,7 @@ output {
     project_id => "123456"
     user_id => "987654"
     password => "password"
+    dimensions => "hostname: elkstack, ip: 192.168.10.4"
   }
 }
 ```
@@ -78,10 +84,10 @@ Run
 ```bash
 bin/logstash -f path-to-configuration-file
 ```
+### Logstash Input plugins
+[https://www.elastic.co/guide/en/logstash/current/input-plugins.html]
 
 ## Open tasks
 * Language translations (Replace hardcoded String messages with a configuration/language file)
 * Exception handling
 * Contribute to logstash [http://www.elastic.co/guide/en/logstash/master/_how_to_write_a_logstash_output_plugin.html#_contributing_your_source_code_to_ulink_url_https_github_com_logstash_plugins_logstash_plugins_ulink_4]
-* Performance optimization (X-Auth-Token caching)
-* Additional configuration params like "dimensions"

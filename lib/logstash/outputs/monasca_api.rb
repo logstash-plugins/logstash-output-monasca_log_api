@@ -24,6 +24,8 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
   config :user_id, :validate => :string, :required => true
   config :password, :validate => :string, :required => true
 
+  config :dimensions, :validate => :string, :default => nil
+
   attr_accessor :token
 
   public
@@ -36,7 +38,7 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
   def receive(log)
     return unless output?(log)
     check_token
-    send_log(log, @token.id)
+    send_log(log, @token.id, dimensions)
   end # def receive
 
   private
@@ -58,8 +60,8 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
     end
   end
 
-  def send_log(log, token_id)
-    @monasca_api_client.send_log(log, token_id) if log and token_id
+  def send_log(log, token_id, dimensions)
+    @monasca_api_client.send_log(log, token_id, dimensions) if log and token_id
   end
 
   def get_token
