@@ -84,6 +84,16 @@ Run
 ```bash
 bin/logstash -f path-to-configuration-file
 ```
+
+Run in debug mode
+```bash
+bin/logstash -f path-to-configuration-file --debug
+```
+
+Specify log output file
+```bash
+bin/logstash -f path-to-configuration-file -l /var/log/monasca/log/agent/test-log-agent.log
+```
 ### Logstash Input plugins
 [https://www.elastic.co/guide/en/logstash/current/input-plugins.html]
 
