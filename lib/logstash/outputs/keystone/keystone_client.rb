@@ -17,8 +17,8 @@ module LogStash::Outputs
         @client = get_client(host, port, '/v3/auth/tokens')
       end
 
-      def authenticate(project_id, user_id, password)
-        auth_hash = generate_hash(project_id, user_id, password)
+      def authenticate(domain_id, username, password, project_name)
+        auth_hash = generate_hash(domain_id, username, password, project_name)
         response = request(auth_hash)
         handle_response(response)
       end
@@ -33,8 +33,8 @@ module LogStash::Outputs
         RestClient::Resource.new(LogStash::Outputs::Helper::UrlHelper.generate_url(host, port, path).to_s)
       end
 
-      def generate_hash(project_id, user_id, password)
-        "{\"auth\":{\"identity\":{\"methods\":[\"password\"],\"password\":{\"user\":{\"id\":\"#{user_id}\",\"password\":\"#{password}\"}}},\"scope\":{\"project\":{\"id\":\"#{project_id}\"}}}}"
+      def generate_hash(domain_id, username, password, project_name)
+        "{\"auth\":{\"identity\":{\"methods\":[\"password\"],\"password\":{\"user\":{\"domain\":{\"id\":\"#{domain_id}\"},\"name\":\"#{username}\",\"password\":\"#{password}\"}}},\"scope\":{\"project\":{\"domain\":{\"id\":\"#{domain_id}\"},\"name\":\"#{project_name}\"}}}}"
       end
 
       def handle_response(response)

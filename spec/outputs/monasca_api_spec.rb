@@ -3,7 +3,15 @@ require_relative 'spec_helper'
 describe "outputs/monasca_api" do
 
   before :each do
-    @monasca_api = LogStash::Plugin.lookup("output", "monasca_api").new("monasca_host" => "192.168.10.4", "monasca_port" => 8080, "keystone_host" => "192.168.10.5", "keystone_port" => 5000, "project_id" => "abadcf984cf7401e88579d393317b0d9", "user_id" => "abadcf984cf7401e88579d393317b0d9", "password" => "password")  
+    @monasca_api = LogStash::Plugin.lookup("output", "monasca_api").new(
+      "monasca_log_api_host" => "192.168.10.4", 
+      "monasca_log_api_port" => 8080, 
+      "keystone_host" => "192.168.10.5", 
+      "keystone_port" => 5000, 
+      "domain_id" => "abadcf984cf7401e88579d393317b0d9", 
+      "username" => "username", 
+      "password" => "password", 
+      "project_name" => "project_name")
   end
 
   describe "#register" do

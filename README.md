@@ -69,8 +69,8 @@ input {
 }
 output {
   monasca_api {
-    monasca_host => "192.168.10.4"
-    monasca_port => 8080
+    monasca_log_api_host => "192.168.10.4"
+    monasca_log_port => 8080
     keystone_host => "192.168.10.5"
     keystone_port => 5000
     project_id => "123456"

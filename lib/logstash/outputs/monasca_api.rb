@@ -13,16 +13,17 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
   config_name 'monasca_api'
 
   # monasca-api host and port configuration
-  config :monasca_host, :validate => :string, :required => true
-  config :monasca_port, :validate => :string, :required => true
+  config :monasca_log_api_host, :validate => :string, :required => true
+  config :monasca_log_api_port, :validate => :string, :required => true
 
   # keystone host and port configuration
   config :keystone_host, :validate => :string, :required => true
   config :keystone_port, :validate => :string, :required => true
   # keystone user configuration
-  config :project_id, :validate => :string, :required => true
-  config :user_id, :validate => :string, :required => true
+  config :project_name, :validate => :string, :required => true
+  config :username, :validate => :string, :required => true
   config :password, :validate => :string, :required => true
+  config :domain_id, :validate => :string, :required => true
 
   config :dimensions, :validate => :string, :default => nil
 
@@ -31,7 +32,7 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
   public
   def register
     @keystone_client = LogStash::Outputs::Keystone::KeystoneClient.new keystone_host, keystone_port
-    @monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new monasca_host, monasca_port
+    @monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new monasca_log_api_host, monasca_log_api_port
     @token = get_token
   end # def register
 
@@ -55,6 +56,6 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
   end
 
   def get_token
-    @keystone_client.authenticate(project_id, user_id, password)
+    @keystone_client.authenticate(domain_id, username, password, project_name)
   end
 end # class LogStash::Outputs::Example
