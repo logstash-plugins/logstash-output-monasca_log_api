@@ -1,0 +1,3 @@
+logstash-core, ~>1.5.0
+logstash-codec-plain, ~>0.1.6
+rest-client, ~>1.8.0

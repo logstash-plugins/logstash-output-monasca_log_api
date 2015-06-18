@@ -22,4 +22,5 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency 'logstash-codec-plain', '~> 0.1.6'
   s.add_runtime_dependency 'rest-client', '~> 1.8.0'
   s.add_development_dependency 'logstash-devutils', '~> 0.0.14'
+  s.add_development_dependency 'simplecov', '~> 0.10.0'
 end
