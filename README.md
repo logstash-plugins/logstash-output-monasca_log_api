@@ -33,6 +33,12 @@ rake test
 bundle exec rspec spec/outputs/monasca/monasca_api_client_spec.rb
 ```
 
+### Run coverage
+```bash
+rake test
+```
+Coverage report can be found at ./coverage/index.html
+
 ## Deploy Gemfile to logstash
 
 First we need to create a Gemfile.
