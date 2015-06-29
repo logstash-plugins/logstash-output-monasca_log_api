@@ -43,6 +43,8 @@ module LogStash::Outputs
           expires_at = DateTime.parse(JSON.parse(response.body)["token"]["expires_at"])
           @logger.debug("Authentication succeed: code=#{response.code}, auth-token=#{response.headers[:x_subject_token]}, expires_at=#{expires_at.to_time}")
           Token.new(response.headers[:x_subject_token], expires_at)
+        else
+          @logger.info("Authentication failed. Response=#{response}")
         end
       end
 

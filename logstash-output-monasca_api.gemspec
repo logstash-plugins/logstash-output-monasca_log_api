@@ -18,9 +18,9 @@ Gem::Specification.new do |s|
   s.metadata = { 'logstash_plugin' => 'true', 'logstash_group' => 'output' }
 
   # Gem dependencies
-  s.add_runtime_dependency 'logstash-core', '~> 1.5.0'
+  s.add_runtime_dependency 'logstash-core', '~> 1.5'
   s.add_runtime_dependency 'logstash-codec-plain', '~> 0.1.6'
-  s.add_runtime_dependency 'rest-client', '~> 1.8.0'
+  s.add_runtime_dependency 'rest-client', '~> 1.8'
   s.add_development_dependency 'logstash-devutils', '~> 0.0.14'
-  s.add_development_dependency 'simplecov', '~> 0.10.0'
+  s.add_development_dependency 'simplecov', '~> 0.10'
 end
