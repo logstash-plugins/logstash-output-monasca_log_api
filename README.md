@@ -1,8 +1,4 @@
 # Logstash Output Monasca-api Plugin
-## Introduction
-Gitlab: [http://estscm1.intern.est.fujitsu.com/teammonitoring/logstash-output-monasca_api]
-
-Jenkins: [http://estesscsijen:8080/job/Logstash-Output-Monasca_Api/]
 
 ## Requirements
 Install:
