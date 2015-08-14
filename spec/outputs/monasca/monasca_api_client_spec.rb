@@ -16,7 +16,7 @@ the License.
 
 require_relative '../spec_helper'
 
-describe LogStash::Outputs::Monasca::MonascaApiClient do
+describe LogStash::Outputs::Monasca::MonascaLogApiClient do
 
   let (:auth_hash) { "{\"auth\":{\"identity\":{\"methods\":[\"password\"],\"password\":{\"user\":{\"domain\":{\"id\":\"1051bd27b9394120b26d8b08847325c0\"},\"name\":\"csi-operator\",\"password\":\"password\"}}},\"scope\":{\"project\":{\"domain\":{\"id\":\"1051bd27b9394120b26d8b08847325c0\"},\"name\":\"csi\"}}}}" }
 
@@ -38,11 +38,11 @@ describe LogStash::Outputs::Monasca::MonascaApiClient do
 
   context 'when initializing' do
     it 'then it should register without exceptions' do
-      expect {LogStash::Outputs::Monasca::MonascaApiClient.new('hostname:8080')}.to_not raise_error
+      expect {LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080')}.to_not raise_error
     end
 
     it "returns a failure if arguments are missing" do
-      expect {LogStash::Outputs::Monasca::MonascaApiClient.new}.to raise_exception(ArgumentError)
+      expect {LogStash::Outputs::Monasca::MonascaLogApiClient.new}.to raise_exception(ArgumentError)
     end
   end
 
@@ -50,24 +50,24 @@ describe LogStash::Outputs::Monasca::MonascaApiClient do
   	it 'with dimensions then it should request monasca' do
       expect_any_instance_of(RestClient::Resource).to receive(:post)
         .with(data, :x_auth_token => token, :content_type => 'application/json', :x_dimensions => dimensions)
-      monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new('hostname:8080')
-      monasca_api_client.send_event(nil, data, token, dimensions)
+      monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080')
+      monasca_log_api_client.send_event(nil, data, token, dimensions)
   	end
 
   	it 'without dimensions then it should request monasca' do
       expect_any_instance_of(RestClient::Resource).to receive(:post)
         .with(data, :x_auth_token => token, :content_type => 'application/json')
-      monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new('hostname:8080')
-      monasca_api_client.send_event(nil, data, token, nil)
+      monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080')
+      monasca_log_api_client.send_event(nil, data, token, nil)
   	end
   end
 
   context 'when sending events failes' do
   	it 'then it should be rescued and a warn log printed' do
   	  expect_any_instance_of(Cabin::Channel).to receive(:warn)
-      monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new('hostname:8080')
-      allow(monasca_api_client).to receive(:request).and_raise('an_error')
-      monasca_api_client.send_event(nil, data, token, dimensions)
+      monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080')
+      allow(monasca_log_api_client).to receive(:request).and_raise('an_error')
+      monasca_log_api_client.send_event(nil, data, token, dimensions)
   	end
   end
 end

@@ -16,7 +16,7 @@ the License.
 
 require_relative 'spec_helper'
 
-describe 'outputs/monasca_api' do
+describe 'outputs/monasca_log_api' do
 
   let (:event) { LogStash::Event.new({'message' => '2015-08-13 08:36:59,316 INFO monasca_notification.main Received signal 17, beginning graceful shutdown.',
                                       '@version' => '1',
@@ -41,42 +41,42 @@ describe 'outputs/monasca_api' do
 
   context 'when initializing' do
     it 'then it should register without exceptions' do
-      monasca_api = LogStash::Plugin.lookup('output', 'monasca_api').new(simple_config)
-      allow(monasca_api).to receive(:get_token).and_return(token_id)
-      expect {monasca_api.register}.to_not raise_error
+      monasca_log_api = LogStash::Plugin.lookup('output', 'monasca_log_api').new(simple_config)
+      allow(monasca_log_api).to receive(:get_token).and_return(token_id)
+      expect {monasca_log_api.register}.to_not raise_error
     end
   end
 
   context 'when receiving messages' do
     it 'then it should be send to monasca-log-api' do
-      expect_any_instance_of(LogStash::Outputs::Monasca::MonascaApiClient).to receive(:send_event)
+      expect_any_instance_of(LogStash::Outputs::Monasca::MonascaLogApiClient).to receive(:send_event)
         .with(event, event.to_hash.to_json, token_id.id, nil)
-      monasca_api = LogStash::Outputs::MonascaApi.new(simple_config)
-      allow(monasca_api).to receive(:get_token).and_return(token_id)
-      monasca_api.register
-      monasca_api.receive(event)
+      monasca_log_api = LogStash::Outputs::MonascaLogApi.new(simple_config)
+      allow(monasca_log_api).to receive(:get_token).and_return(token_id)
+      monasca_log_api.register
+      monasca_log_api.receive(event)
     end
 
     it 'then it should check the token_id and renew it when its deprecated' do
       expect_any_instance_of(LogStash::Outputs::Keystone::KeystoneClient).to receive(:authenticate)
         .with(simple_config['domain_id'], simple_config['username'], simple_config['password'], simple_config['project_name'])
-      monasca_api = LogStash::Outputs::MonascaApi.new(simple_config)
-      allow(monasca_api).to receive(:get_token).and_return(old_token_id)
-      monasca_api.register
-      allow(monasca_api).to receive(:get_token).and_call_original
-      allow(monasca_api).to receive(:send_event)
-      monasca_api.receive(event)
+      monasca_log_api = LogStash::Outputs::MonascaLogApi.new(simple_config)
+      allow(monasca_log_api).to receive(:get_token).and_return(old_token_id)
+      monasca_log_api.register
+      allow(monasca_log_api).to receive(:get_token).and_call_original
+      allow(monasca_log_api).to receive(:send_event)
+      monasca_log_api.receive(event)
     end
   end
 
   context 'when receiving SHUTDOWN message' do
     it 'then it should be send to monasca-log-api' do
-      expect_any_instance_of(LogStash::Outputs::Monasca::MonascaApiClient).to_not receive(:send_event)
+      expect_any_instance_of(LogStash::Outputs::Monasca::MonascaLogApiClient).to_not receive(:send_event)
         .with(shutdown_event, nil, token_id.id, nil)
-      monasca_api = LogStash::Outputs::MonascaApi.new(simple_config)
-      allow(monasca_api).to receive(:get_token).and_return(token_id)
-      monasca_api.register
-      monasca_api.receive(shutdown_event)
+      monasca_log_api = LogStash::Outputs::MonascaLogApi.new(simple_config)
+      allow(monasca_log_api).to receive(:get_token).and_return(token_id)
+      monasca_log_api.register
+      monasca_log_api.receive(shutdown_event)
     end
   end
 

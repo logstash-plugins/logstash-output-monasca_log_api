@@ -18,14 +18,14 @@ require 'logstash/outputs/base'
 require 'logstash/namespace'
 
 # relative requirements
-require_relative 'monasca/monasca_api_client'
+require_relative 'monasca/monasca_log_api_client'
 require_relative 'keystone/keystone_client'
 
 # This Logstash Output plugin, sends events to monasca-api.
 # It authenticates against keystone and gets a token.
 # The token is used to authenticate against the monasca-api and send log events.
-class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
-  config_name 'monasca_api'
+class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
+  config_name 'monasca_log_api'
 
   # monasca-api host and port configuration
   config :monasca_log_api, :validate => :string, :required => true
@@ -47,7 +47,7 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
   public
   def register
     @keystone_client = LogStash::Outputs::Keystone::KeystoneClient.new keystone_host
-    @monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new monasca_log_api
+    @monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new monasca_log_api
     @token = get_token
 
     @logger.info('Registering keystone user', :username => @username, :project_name => @project_name)
@@ -78,7 +78,7 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
   end
 
   def send_event(event, data, dimensions)
-    @monasca_api_client.send_event(event, data, @token.id, dimensions) if event and @token.id and data
+    @monasca_log_api_client.send_event(event, data, @token.id, dimensions) if event and @token.id and data
   end
 
   def get_token

@@ -23,7 +23,7 @@ require_relative '../helper/url_helper'
 # This class creates a connection to monasca-api
 module LogStash::Outputs
   module Monasca
-    class MonascaApiClient
+    class MonascaLogApiClient
       
       def initialize(host)
         @logger = Cabin::Channel.get(LogStash)

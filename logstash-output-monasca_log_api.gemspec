@@ -1,5 +1,5 @@
 Gem::Specification.new do |s|
-  s.name = 'logstash-output-monasca_api'
+  s.name = 'logstash-output-monasca_log_api'
   s.version = '0.2'
   s.licenses = ['Apache License 2.0']
   s.summary = 'This gem is a logstash output plugin to connect via http to monasca-log-api.'

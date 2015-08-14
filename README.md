@@ -26,7 +26,7 @@ rake test
 
 ### Run specified test
 ```bash
-bundle exec rspec spec/outputs/monasca/monasca_api_client_spec.rb
+bundle exec rspec spec/outputs/monasca/monasca_log_api_client_spec.rb
 ```
 
 ### Run coverage
@@ -44,7 +44,7 @@ What is a Gemfile? Gems are packages for the Ruby programming language. A Gemfil
 
 How to build a Gemfile? Run this:
 ```bash
-gem build logstash-output-monasca_api.gemspec
+gem build logstash-output-monasca_log_api.gemspec
 ```
 
 ### Deploy Gemfile to logstash
@@ -54,10 +54,10 @@ gem build logstash-output-monasca_api.gemspec
 * Add this line to the Gemfile
 
   ```bash
-  gem "logstash-output-monasca_api", :path => "/vagrant_home/cloudmonitor/logstash-output-monasca_api"
+  gem "logstash-output-monasca_log_api", :path => "/vagrant_home/cloudmonitor/logstash-output-monasca_log_api"
   ```
-  * logstash-output-monasca_api = name of the gem
-  * "/vagrant_home/cloudmonitor/logstash-output-monasca_api" = Path to git workspace
+  * logstash-output-monasca_log_api = name of the gem
+  * "/vagrant_home/cloudmonitor/logstash-output-monasca_log_api" = Path to git workspace
 
 Run this command to install the plugin
 ```bash
@@ -71,15 +71,12 @@ input {
   stdin { }
 }
 output {
-  monasca_api {
-    monasca_log_api_host => "192.168.10.4"
-    monasca_log_api_port => 8080
-    keystone_host => "192.168.10.5"
-    keystone_port => 5000
-    project_name => "123456"
-    username => "987654"
+  monasca_log_api {
+    monasca_log_api_host => "192.168.10.4:8080"
+    keystone_host => "192.168.10.5:5000"
+    project_id => "123456"
+    user_id => "987654"
     password => "password"
-    domain_id => "default"
     dimensions => "hostname: elkstack, ip: 192.168.10.4"
   }
 }
