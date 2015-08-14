@@ -21,7 +21,7 @@ describe LogStash::Outputs::Keystone::Token do
   describe "#new" do
     it "takes two parameters and returns a Token object" do
       token = LogStash::Outputs::Keystone::Token.new('token-id', DateTime.now)
-      token.should be_an_instance_of LogStash::Outputs::Keystone::Token
+      expect(token).to be_a(LogStash::Outputs::Keystone::Token)
     end    
   end
 
@@ -31,8 +31,8 @@ describe LogStash::Outputs::Keystone::Token do
       second_token = LogStash::Outputs::Keystone::Token.new('token-id', DateTime.parse("2015-05-26T08:55:36.774122Z"))
       third_token = LogStash::Outputs::Keystone::Token.new('token-id', DateTime.parse("2015-05-30T08:55:36.774122Z"))
 
-      token.should == second_token
-      third_token.should_not == second_token
+      expect(token).to eq(second_token)
+      expect(third_token).to_not eq(second_token)
     end
   end
 end

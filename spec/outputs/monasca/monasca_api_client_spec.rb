@@ -18,52 +18,56 @@ require_relative '../spec_helper'
 
 describe LogStash::Outputs::Monasca::MonascaApiClient do
 
-  before :each do
-  	@monasca_client = LogStash::Outputs::Monasca::MonascaApiClient.new('localhost', 5000)
-  end
+  let (:auth_hash) { "{\"auth\":{\"identity\":{\"methods\":[\"password\"],\"password\":{\"user\":{\"domain\":{\"id\":\"1051bd27b9394120b26d8b08847325c0\"},\"name\":\"csi-operator\",\"password\":\"password\"}}},\"scope\":{\"project\":{\"domain\":{\"id\":\"1051bd27b9394120b26d8b08847325c0\"},\"name\":\"csi\"}}}}" }
 
-  describe "#new" do
-    
-    it "takes two parameters and returns a MonascaApimonasca_client object" do
-      @monasca_client.should be_an_instance_of LogStash::Outputs::Monasca::MonascaApiClient
+  let (:ok_response) { stub_response(201, {:x_subject_token => "f8cdafb7dce94444ad781a53ddaff693"}, "{\"token\":{\"methods\":[\"password\"],\"roles\":[{\"id\":\"9fe2ff9ee4384b1894a90878d3e92bab\",\"name\":\"_member_\"},{\"id\":\"4e9ef1ffe73446c6b02f8fce0585c307\",\"name\":\"monasca-user\"}],\"expires_at\":\"2015-05-26T08:55:36.774122Z\",\"project\":{\"domain\":{\"id\":\"default\",\"name\":\"Default\"},\"id\":\"1051bd27b9394120b26d8b08847325c0\",\"name\":\"mini-mon\"},\"user\":{\"domain\":{\"id\":\"default\",\"name\":\"Default\"},\"id\":\"06ecc9869b8e4846b2fce3e5759ba4af\",\"name\":\"mini-mon\"},\"audit_ids\":[\"ORap7R56S2S-p6tFVeMkpg\"],\"issued_at\":\"2015-05-26T07:55:36.774146Z\"}}") }
+
+  let (:failed_response) { stub_response(401, {:x_subject_token => "f8cdafb7dce94444ad781a53ddaff693"}, "{\"error\": {\"message\": \"Could not find project: f8cdafb7dce94444ad781a53ddaff693 (Disable debug mode to suppress these details.)\", \"code\": 401, \"title\": \"Unauthorized\"}}") }
+
+  let (:data) { LogStash::Event.new({'message' => '2015-08-13 08:36:59,316 INFO monasca_notification.main Received signal 17, beginning graceful shutdown.',
+                                      '@version' => '1',
+                                      '@timestamp' => '2015-08-13T08:37:00.287Z',
+                                      'type' => 'notification',
+                                      'service' => 'notification',
+                                      'host' => 'monasca',
+                                      'path' => '/var/log/monasca/notification/notification.log'}) }
+
+  let (:token) { LogStash::Outputs::Keystone::Token.new('abc', DateTime.now + Rational(5, 1440)) }
+
+  let (:dimensions) { { 'hostname' => 'monasca' } }
+
+  context 'when initializing' do
+    it 'then it should register without exceptions' do
+      expect {LogStash::Outputs::Monasca::MonascaApiClient.new('hostname:8080')}.to_not raise_error
     end
 
     it "returns a failure if arguments are missing" do
-      expect {@monasca_client.send_log('event')}.to raise_exception(ArgumentError)
+      expect {LogStash::Outputs::Monasca::MonascaApiClient.new}.to raise_exception(ArgumentError)
     end
   end
 
-  describe "#send_log" do
-  	it "sends successfully an event to monasca-api" do
-  	  response = stub_response(204, nil, nil)
+  context 'when sending events' do
+  	it 'with dimensions then it should request monasca' do
+      expect_any_instance_of(RestClient::Resource).to receive(:post)
+        .with(data, :x_auth_token => token, :content_type => 'application/json', :x_dimensions => dimensions)
+      monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new('hostname:8080')
+      monasca_api_client.send_event(nil, data, token, dimensions)
+  	end
 
-      @monasca_client.stub(:request).and_return(response)
-  	  expect {@monasca_client.send_log('event-message', 'abadcf984cf7401e88579d393317b0d9', 'dimensions')}.not_to raise_exception
-    end
-
-  	it "failed to connect to monasca-api" do
-  	  response = stub_response(404, nil, "Connection refused")
-
-      @monasca_client.stub(:request).and_raise(response)
-  	  expect {@monasca_client.send_log('event-message', 'abadcf984cf7401e88579d393317b0d9', 'dimensions')}.to raise_exception
-    end
-
-  	it "with false authentication-token" do
-  	  response = stub_response(401, nil, "{\"unauthorized\":{\"code\":401,\"message\":\"Authorization failed for user token: xxabadcf984cf7401e88579d393317b0d9 xxabadcf984cf7401e88579d393317b0d9\",\"details\":\"\",\"internal_code\":\"330977495d9aa267\"}}")
-
-      @monasca_client.stub(:request).and_raise(response)
-  	  expect {@monasca_client.send_log('event-message', 'bcddcf984cf7401e88579d393317b0d9', 'dimensions')}.to raise_exception
-    end
+  	it 'without dimensions then it should request monasca' do
+      expect_any_instance_of(RestClient::Resource).to receive(:post)
+        .with(data, :x_auth_token => token, :content_type => 'application/json')
+      monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new('hostname:8080')
+      monasca_api_client.send_event(nil, data, token, nil)
+  	end
   end
 
-  private
-
-  def stub_response(code, headers, body)
-    response = double
-    response.stub(:code) { code } if code
-    response.stub(:headers) { headers } if headers
-    response.stub(:body) { body } if body
-    response
+  context 'when sending events failes' do
+  	it 'then it should be rescued and a warn log printed' do
+  	  expect_any_instance_of(Cabin::Channel).to receive(:warn)
+      monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new('hostname:8080')
+      allow(monasca_api_client).to receive(:request).and_raise('an_error')
+      monasca_api_client.send_event(nil, data, token, dimensions)
+  	end
   end
-
 end

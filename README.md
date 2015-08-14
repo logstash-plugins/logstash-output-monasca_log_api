@@ -35,8 +35,9 @@ rake test
 ```
 Coverage report can be found at ./coverage/index.html
 
-## Deploy Gemfile to logstash
+## Deploy Plugin to logstash
 
+### Build Gemfile
 First we need to create a Gemfile.
 
 What is a Gemfile? Gems are packages for the Ruby programming language. A Gemfile defines all dependencies which are neccessary to build the product.
@@ -46,7 +47,7 @@ How to build a Gemfile? Run this:
 gem build logstash-output-monasca_api.gemspec
 ```
 
-## Deploy Gemfile to logstash
+### Deploy Gemfile to logstash
 
 * Download logstash (>=1.5.0.rc2) [http://download.elastic.co/logstash/logstash/logstash-1.5.0.rc2.tar.gz]
 * Extract logstash and navigate into the folder

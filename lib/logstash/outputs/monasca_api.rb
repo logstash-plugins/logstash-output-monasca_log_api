@@ -28,12 +28,10 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
   config_name 'monasca_api'
 
   # monasca-api host and port configuration
-  config :monasca_log_api_host, :validate => :string, :required => true
-  config :monasca_log_api_port, :validate => :string, :required => true
+  config :monasca_log_api, :validate => :string, :required => true
 
   # keystone host and port configuration
   config :keystone_host, :validate => :string, :required => true
-  config :keystone_port, :validate => :string, :required => true
   # keystone user configuration
   config :project_name, :validate => :string, :required => true
   config :username, :validate => :string, :required => true
@@ -44,17 +42,30 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
 
   attr_accessor :token
 
+  default :codec, 'json'
+
   public
   def register
-    @keystone_client = LogStash::Outputs::Keystone::KeystoneClient.new keystone_host, keystone_port
-    @monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new monasca_log_api_host, monasca_log_api_port
+    @keystone_client = LogStash::Outputs::Keystone::KeystoneClient.new keystone_host
+    @monasca_api_client = LogStash::Outputs::Monasca::MonascaApiClient.new monasca_log_api
     @token = get_token
+
+    @logger.info('Registering keystone user', :username => @username, :project_name => @project_name)
+
+    @codec.on_event do |event, data|
+      check_token
+      send_event(event, data, dimensions)
+    end
+
   end # def register
 
-  def receive(log)
-    return unless output?(log)
-    check_token
-    send_log(log, @token.id, dimensions)
+  def receive(event)
+    return unless output?(event)
+    if event == LogStash::SHUTDOWN
+      finished
+      return
+    end
+    @codec.encode(event)
   end # def receive
 
   private
@@ -62,12 +73,12 @@ class LogStash::Outputs::MonascaApi < LogStash::Outputs::Base
     now = DateTime.now + Rational(1, 1440)
     if now >= @token.expire_at
       @token = get_token
-      @logger.debug("token expired. New token requested")
+      @logger.info("Token expired. New token requested")
     end
   end
 
-  def send_log(log, token_id, dimensions)
-    @monasca_api_client.send_log(log, token_id, dimensions) if log and token_id
+  def send_event(event, data, dimensions)
+    @monasca_api_client.send_event(event, data, @token.id, dimensions) if event and @token.id and data
   end
 
   def get_token
