@@ -42,6 +42,7 @@ describe LogStash::Outputs::Monasca::MonascaLogApiClient do
     end
 
     it "returns a failure if arguments are missing" do
+      # noinspection RubyArgCount
       expect {LogStash::Outputs::Monasca::MonascaLogApiClient.new}.to raise_exception(ArgumentError)
     end
   end
@@ -59,7 +60,15 @@ describe LogStash::Outputs::Monasca::MonascaLogApiClient do
         .with(data, :x_auth_token => token, :content_type => 'application/json')
       monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080')
       monasca_log_api_client.send_event(nil, data, token, nil)
-  	end
+    end
+
+    it 'with application_type then it should request monasca with that value' do
+      app_type = 'someapp'
+      expect_any_instance_of(RestClient::Resource).to receive(:post)
+        .with(data, :x_auth_token => token, :content_type => 'application/json', :x_application_type => app_type)
+      monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080')
+      monasca_log_api_client.send_event(nil, data, token, nil, app_type)
+    end
   end
 
   context 'when sending events failes' do
@@ -70,4 +79,5 @@ describe LogStash::Outputs::Monasca::MonascaLogApiClient do
       monasca_log_api_client.send_event(nil, data, token, dimensions)
   	end
   end
+
 end

@@ -24,16 +24,16 @@ require_relative '../helper/url_helper'
 module LogStash::Outputs
   module Monasca
     class MonascaLogApiClient
-      
+
       def initialize(host)
         @logger = Cabin::Channel.get(LogStash)
         @rest_client = RestClient::Resource.new(LogStash::Outputs::Helper::UrlHelper.generate_url(host, '/v2.0').to_s)
       end
-    
+
       # Send log events to monasca-api, requires token
-      def send_event(event, data, token, dimensions)
+      def send_event(event, data, token, dimensions, application_type=nil)
         begin
-          request(event, data, token, dimensions)
+          request(event, data, token, dimensions, application_type)
           @logger.debug("Successfully send event=#{event}, with token=#{token} and dimensions=#{dimensions} to monasca-api")
         rescue => e
           @logger.warn('Sending event to monasca-log-api threw exception', :exceptionew => e)
@@ -42,23 +42,22 @@ module LogStash::Outputs
 
       private
 
-      def request(event, data, token, dimensions)
+      def request(event, data, token, dimensions, application_type)
+        post_headers = {
+            :x_auth_token => token,
+            :content_type => 'application/json',
+        }
         if dimensions
-          @rest_client['log']['single'].post(
-            data, 
-            :x_auth_token => token, 
-            :content_type => 'application/json', 
-            :x_dimensions => dimensions
-          )
-        else
-          @rest_client['log']['single'].post(
-            data, 
-            :x_auth_token => token, 
-            :content_type => 'application/json'
-          )
+          post_headers[:x_dimensions] = dimensions
         end
+
+        if application_type
+          post_headers[:x_application_type] = application_type
+        end
+
+        @rest_client['log']['single'].post(data, post_headers)
       end
-    
+
     end
   end
 end

@@ -18,10 +18,12 @@ require_relative 'spec_helper'
 
 describe 'outputs/monasca_log_api' do
 
+  let (:expected_application_type) { 'notification' }
+
   let (:event) { LogStash::Event.new({'message' => '2015-08-13 08:36:59,316 INFO monasca_notification.main Received signal 17, beginning graceful shutdown.',
                                       '@version' => '1',
                                       '@timestamp' => '2015-08-13T08:37:00.287Z',
-                                      'type' => 'notification',
+                                      'type' => expected_application_type,
                                       'service' => 'notification',
                                       'host' => 'monasca',
                                       'path' => '/var/log/monasca/notification/notification.log'}) }
@@ -30,9 +32,9 @@ describe 'outputs/monasca_log_api' do
 
   let (:simple_config) { {'monasca_log_api' => '192.168.10.4:8080',
       'keystone_host' => '192.168.10.5:5000',
-      'domain_id' => 'abadcf984cf7401e88579d393317b0d9', 
-      'username' => 'username', 
-      'password' => 'password', 
+      'domain_id' => 'abadcf984cf7401e88579d393317b0d9',
+      'username' => 'username',
+      'password' => 'password',
       'project_name' => 'project_name'} }
 
   let (:token_id) { LogStash::Outputs::Keystone::Token.new('abc', DateTime.now + Rational(5, 1440)) }
@@ -45,14 +47,32 @@ describe 'outputs/monasca_log_api' do
       allow(monasca_log_api).to receive(:get_token).and_return(token_id)
       expect {monasca_log_api.register}.to_not raise_error
     end
+
+    it "should set a default application_type_key to \"type\"" do
+      monasca_log_api = LogStash::Plugin.lookup('output', 'monasca_log_api').new(simple_config)
+      expect(monasca_log_api.instance_variable_get('@application_type_key')).to eq("type")
+    end
+
+    it 'should use passed variable from config as application_type_key' do
+      expected_key = 'mountain_dew'
+      simple_config_copy = simple_config.clone
+      simple_config_copy['application_type_key'] = expected_key
+      monasca_log_api = LogStash::Plugin.lookup('output', 'monasca_log_api').new(simple_config_copy)
+
+      expect(monasca_log_api.instance_variable_get('@application_type_key')).to eq(expected_key)
+    end
+
   end
 
   context 'when receiving messages' do
     it 'then it should be send to monasca-log-api' do
       expect_any_instance_of(LogStash::Outputs::Monasca::MonascaLogApiClient).to receive(:send_event)
-        .with(event, event.to_hash.to_json, token_id.id, nil)
+        .with(event, event.to_hash.to_json, token_id.id, nil, expected_application_type)
       monasca_log_api = LogStash::Outputs::MonascaLogApi.new(simple_config)
+
       allow(monasca_log_api).to receive(:get_token).and_return(token_id)
+      allow(monasca_log_api).to receive(:get_application_type).and_call_original
+
       monasca_log_api.register
       monasca_log_api.receive(event)
     end
@@ -67,6 +87,35 @@ describe 'outputs/monasca_log_api' do
       allow(monasca_log_api).to receive(:send_event)
       monasca_log_api.receive(event)
     end
+  end
+
+  context 'when given dictionary as type in received message' do
+    it 'should read application_type from it properly' do
+      type_dict = {
+          "application_type" => 'notification'
+      }
+      config = simple_config.merge({"application_type_key" => 'type.application_type'})
+      puts config
+
+      event = LogStash::Event.new({"message" => '2015-08-13 08:36:59,316 INFO monasca_notification.main Received signal 17, beginning graceful shutdown.',
+                                   "@version" => '1',
+                                   "@timestamp" => '2015-08-13T08:37:00.287Z',
+                                   "type" => type_dict,
+                                   "service" => 'notification',
+                                   "host" => 'monasca',
+                                   "path" => '/var/log/monasca/notification/notification.log',
+                                  })
+      expect_any_instance_of(LogStash::Outputs::Monasca::MonascaLogApiClient).to receive(:send_event)
+        .with(event, event.to_hash.to_json, token_id.id, nil, expected_application_type)
+      monasca_log_api = LogStash::Outputs::MonascaLogApi.new(config)
+
+      allow(monasca_log_api).to receive(:get_token).and_return(token_id)
+      allow(monasca_log_api).to receive(:get_application_type).and_call_original
+
+      monasca_log_api.register
+      monasca_log_api.receive(event)
+    end
+
   end
 
   context 'when receiving SHUTDOWN message' do

@@ -16,6 +16,7 @@ the License.
 
 require 'logstash/outputs/base'
 require 'logstash/namespace'
+require 'vine'
 
 # relative requirements
 require_relative 'monasca/monasca_log_api_client'
@@ -39,6 +40,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
   config :domain_id, :validate => :string, :required => true
 
   config :dimensions, :validate => :string, :default => nil
+  config :application_type_key, :validate => :string, :default => 'type'
 
   attr_accessor :token
 
@@ -77,8 +79,29 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
     end
   end
 
+  private
+  def get_application_type(event)
+
+    # support for nested.keys.with.lists.0
+    if @application_type_key.include? '.'
+      split_key = @application_type_key.split('.')
+      event_value = event[split_key[0]]
+      access_key = split_key.slice(1..-1).join('.')
+
+      app_type = event_value.access(access_key)
+
+    else
+      app_type = event[@application_type_key]
+    end
+
+    @logger.debug(
+        'Retrieved application_type', :application_type => app_type, :application_type_key => @application_type_key
+    )
+    app_type
+  end
+
   def send_event(event, data, dimensions)
-    @monasca_log_api_client.send_event(event, data, @token.id, dimensions) if event and @token.id and data
+    @monasca_log_api_client.send_event(event, data, @token.id, dimensions, get_application_type(event)) if event and @token.id and data
   end
 
   def get_token
