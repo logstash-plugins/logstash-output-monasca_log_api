@@ -70,16 +70,42 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
     @codec.encode(event)
   end # def receive
 
+  def finished
+    if @shutdown_queue
+      @logger.info('Sending shutdown event to agent queue', :plugin => self.class.config_name)
+      @shutdown_queue << self
+    end
+    if @plugin_state != :finished
+      @logger.info('Plugin is finished', :plugin => self.class.config_name)
+      @plugin_state = :finished
+    end
+  end
+
+  def shutdown(queue)
+    teardown
+    @logger.info('Received shutdown signal', :plugin => self.class.config_name)
+
+    @shutdown_queue = queue
+    if @plugin_state == :finished
+      finished
+    else
+      @plugin_state = :terminating
+    end
+  end
+
   private
   def check_token
     now = DateTime.now + Rational(1, 1440)
     if now >= @token.expire_at
       @token = get_token
-      @logger.info("Token expired. New token requested")
+      @logger.info('Token expired. New token requested')
     end
   end
 
-  private
+  def send_event(event, data, dimensions)
+    @monasca_log_api_client.send_event(event, data, @token.id, dimensions, get_application_type(event)) if event and @token.id and data
+  end
+
   def get_application_type(event)
 
     # support for nested.keys.with.lists.0
@@ -100,11 +126,8 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
     app_type
   end
 
-  def send_event(event, data, dimensions)
-    @monasca_log_api_client.send_event(event, data, @token.id, dimensions, get_application_type(event)) if event and @token.id and data
-  end
-
   def get_token
     @keystone_client.authenticate(domain_id, username, password, project_name)
   end
+
 end # class LogStash::Outputs::Example
