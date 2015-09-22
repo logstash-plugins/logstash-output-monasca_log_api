@@ -2,7 +2,7 @@
 
 ## Requirements
 Install:
-* JRuby (I recommend to use Ruby Version Manager (RVM) How to install? -> Read this: [https://rvm.io/rvm/install])
+* JRuby (I recommend to use Ruby Version Manager (RVM) How to install? -> Read this: https://rvm.io/rvm/install)
 * bundler, how to install?
 
   ```
@@ -49,7 +49,7 @@ gem build logstash-output-monasca_log_api.gemspec
 
 ### Deploy Gemfile to logstash
 
-* Download logstash (>=1.5.0.rc2) [http://download.elastic.co/logstash/logstash/logstash-1.5.0.rc2.tar.gz]
+* [Download logstash](http://download.elastic.co/logstash/logstash/logstash-1.5.0.rc2.tar.gz) (>=1.5.0.rc2)
 * Extract logstash and navigate into the folder
 * Add this line to the Gemfile
 
@@ -72,8 +72,8 @@ input {
 }
 output {
   monasca_log_api {
-    monasca_log_api_host => "192.168.10.4:8080"
-    keystone_host => "192.168.10.5:5000"
+    monasca_log_api_host => "http://192.168.10.4:8080"
+    keystone_api => "http://192.168.10.5:5000"
     project_id => "123456"
     user_id => "987654"
     password => "password"
@@ -97,9 +97,9 @@ Specify log output file
 bin/logstash -f path-to-configuration-file -l /var/log/monasca/log/agent/test-log-agent.log
 ```
 ### Logstash Input plugins
-[https://www.elastic.co/guide/en/logstash/current/input-plugins.html]
+https://www.elastic.co/guide/en/logstash/current/input-plugins.html
 
 ## Open tasks
 * Language translations (Replace hardcoded String messages with a configuration/language file)
 * Exception handling (monasca-api requests)
-* Contribute to logstash [http://www.elastic.co/guide/en/logstash/master/_how_to_write_a_logstash_output_plugin.html#_contributing_your_source_code_to_ulink_url_https_github_com_logstash_plugins_logstash_plugins_ulink_4]
+* Contribute to logstash http://www.elastic.co/guide/en/logstash/master/_how_to_write_a_logstash_output_plugin.html#_contributing_your_source_code_to_ulink_url_https_github_com_logstash_plugins_logstash_plugins_ulink_4

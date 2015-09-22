@@ -20,13 +20,14 @@ describe LogStash::Outputs::Helper::UrlHelper do
 
   describe ".generate_url" do
     it "generates a URI::HTTP object" do
-      expect(LogStash::Outputs::Helper::UrlHelper.generate_url('192.168.10.5:8080', '/v2.0')).to be_a URI::HTTP
+      expect(LogStash::Outputs::Helper::UrlHelper.generate_url('http://192.168.10.5:8080', '/v2.0')).to be_a URI::HTTP
     end
 
     it "should match a http url" do
-      expect(LogStash::Outputs::Helper::UrlHelper.generate_url('192.168.10.5:8080', '/v2.0').to_s).to eq('http://192.168.10.5:8080/v2.0')
-      expect(LogStash::Outputs::Helper::UrlHelper.generate_url('est.fujitsu:40', nil).to_s).to eq('http://est.fujitsu:40')
-      expect(LogStash::Outputs::Helper::UrlHelper.generate_url('est.fujitsu:80', nil).to_s).to eq('http://est.fujitsu')
+      expect(LogStash::Outputs::Helper::UrlHelper.generate_url('http://192.168.10.5:8080', '/v2.0').to_s).to eq('http://192.168.10.5:8080/v2.0')
+      expect(LogStash::Outputs::Helper::UrlHelper.generate_url('http://est.fujitsu:40', nil).to_s).to eq('http://est.fujitsu:40')
+      expect(LogStash::Outputs::Helper::UrlHelper.generate_url('http://est.fujitsu:80', nil).to_s).to eq('http://est.fujitsu')
+      expect(LogStash::Outputs::Helper::UrlHelper.generate_url('https://192.168.10.5:8080', '/v2.0').to_s).to eq('https://192.168.10.5:8080/v2.0')
     end
   end
 

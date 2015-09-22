@@ -32,7 +32,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
   config :monasca_log_api, :validate => :string, :required => true
 
   # keystone host and port configuration
-  config :keystone_host, :validate => :string, :required => true
+  config :keystone_api, :validate => :string, :required => true
   # keystone user configuration
   config :project_name, :validate => :string, :required => true
   config :username, :validate => :string, :required => true
@@ -48,7 +48,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
 
   public
   def register
-    @keystone_client = LogStash::Outputs::Keystone::KeystoneClient.new keystone_host
+    @keystone_client = LogStash::Outputs::Keystone::KeystoneClient.new keystone_api
     @monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new monasca_log_api
     @token = get_token
 

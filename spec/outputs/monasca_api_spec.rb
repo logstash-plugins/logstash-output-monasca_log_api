@@ -30,8 +30,8 @@ describe 'outputs/monasca_log_api' do
 
   let (:shutdown_event) { LogStash::SHUTDOWN }
 
-  let (:simple_config) { {'monasca_log_api' => '192.168.10.4:8080',
-      'keystone_host' => '192.168.10.5:5000',
+  let (:simple_config) { {'monasca_log_api' => 'http://192.168.10.4:8080',
+      'keystone_api' => 'http://192.168.10.5:5000',
       'domain_id' => 'abadcf984cf7401e88579d393317b0d9',
       'username' => 'username',
       'password' => 'password',
@@ -95,7 +95,6 @@ describe 'outputs/monasca_log_api' do
           "application_type" => 'notification'
       }
       config = simple_config.merge({"application_type_key" => 'type.application_type'})
-      puts config
 
       event = LogStash::Event.new({"message" => '2015-08-13 08:36:59,316 INFO monasca_notification.main Received signal 17, beginning graceful shutdown.',
                                    "@version" => '1',

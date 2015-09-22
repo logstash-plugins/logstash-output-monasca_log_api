@@ -20,7 +20,8 @@ module LogStash::Outputs
   module Helper
     class UrlHelper
       def self.generate_url(host, path)
-        URI::HTTP.new('http', nil, host.split(':')[0], host.split(':')[1], nil, path, nil, nil, nil)
+        uri = URI.parse(host)
+        URI::HTTP.new(uri.scheme, nil, uri.host, uri.port, nil, path, nil, nil, nil)
       end
     end
   end

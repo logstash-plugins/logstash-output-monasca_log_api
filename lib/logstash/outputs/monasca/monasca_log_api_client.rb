@@ -54,7 +54,6 @@ module LogStash::Outputs
         if application_type
           post_headers[:x_application_type] = application_type
         end
-
         @rest_client['log']['single'].post(data, post_headers)
       end
 
