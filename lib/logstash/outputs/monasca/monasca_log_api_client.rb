@@ -25,9 +25,12 @@ module LogStash::Outputs
   module Monasca
     class MonascaLogApiClient
 
-      def initialize(host)
+      SUPPORTED_API_VERSION = %w(2.0)
+
+      def initialize(host, version)
         @logger = Cabin::Channel.get(LogStash)
-        @rest_client = RestClient::Resource.new(LogStash::Outputs::Helper::UrlHelper.generate_url(host, '/v2.0').to_s)
+        @rest_client_url = LogStash::Outputs::Helper::UrlHelper.generate_url(host, '/' + check_version(version)).to_s
+        @rest_client = RestClient::Resource.new(@rest_client_url)
       end
 
       # Send log events to monasca-api, requires token
@@ -54,7 +57,20 @@ module LogStash::Outputs
         if application_type
           post_headers[:x_application_type] = application_type
         end
+
+        @logger.debug('Sending data to ', :url => @rest_client_url)
         @rest_client['log']['single'].post(data, post_headers)
+      end
+
+
+      def check_version(version)
+        tmp_version = version.sub('v','')
+
+        unless SUPPORTED_API_VERSION.include? tmp_version
+          raise "#{tmp_version} is not supported, supported versions are #{SUPPORTED_API_VERSION}"
+        end
+
+        version
       end
 
     end

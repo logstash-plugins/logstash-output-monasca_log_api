@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'logstash-output-monasca_log_api'
-  s.version = '0.3.2'
+  s.version = '0.3.3'
   s.licenses = ['Apache License 2.0']
   s.summary = 'This gem is a logstash output plugin to connect via http to monasca-log-api.'
   s.description = 'This gem is a logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/plugin install gemname. This gem is not a stand-alone program'
@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
 
   # Files
   s.files = Dir["lib/**/*", "spec/**/*", "*.gemspec", "*.md", "Gemfile", "LICENSE"]
-  
+
   # Tests
   s.test_files = s.files.grep(%r{^(test|spec|features)/})
 

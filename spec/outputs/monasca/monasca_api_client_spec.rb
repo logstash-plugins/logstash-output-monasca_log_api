@@ -17,6 +17,7 @@ the License.
 require_relative '../spec_helper'
 
 describe LogStash::Outputs::Monasca::MonascaLogApiClient do
+  let (:version) { "v2.0" }
 
   let (:auth_hash) { "{\"auth\":{\"identity\":{\"methods\":[\"password\"],\"password\":{\"user\":{\"domain\":{\"id\":\"1051bd27b9394120b26d8b08847325c0\"},\"name\":\"csi-operator\",\"password\":\"password\"}}},\"scope\":{\"project\":{\"domain\":{\"id\":\"1051bd27b9394120b26d8b08847325c0\"},\"name\":\"csi\"}}}}" }
 
@@ -38,7 +39,7 @@ describe LogStash::Outputs::Monasca::MonascaLogApiClient do
 
   context 'when initializing' do
     it 'then it should register without exceptions' do
-      expect {LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080')}.to_not raise_error
+      expect {LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080', version)}.to_not raise_error
     end
 
     it "returns a failure if arguments are missing" do
@@ -51,14 +52,14 @@ describe LogStash::Outputs::Monasca::MonascaLogApiClient do
   	it 'with dimensions then it should request monasca' do
       expect_any_instance_of(RestClient::Resource).to receive(:post)
         .with(data, :x_auth_token => token, :content_type => 'application/json', :x_dimensions => dimensions)
-      monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080')
+      monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080', version)
       monasca_log_api_client.send_event(nil, data, token, dimensions)
   	end
 
   	it 'without dimensions then it should request monasca' do
       expect_any_instance_of(RestClient::Resource).to receive(:post)
         .with(data, :x_auth_token => token, :content_type => 'application/json')
-      monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080')
+      monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080', version)
       monasca_log_api_client.send_event(nil, data, token, nil)
     end
 
@@ -66,7 +67,7 @@ describe LogStash::Outputs::Monasca::MonascaLogApiClient do
       app_type = 'someapp'
       expect_any_instance_of(RestClient::Resource).to receive(:post)
         .with(data, :x_auth_token => token, :content_type => 'application/json', :x_application_type => app_type)
-      monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080')
+      monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080', version)
       monasca_log_api_client.send_event(nil, data, token, nil, app_type)
     end
   end
@@ -74,10 +75,31 @@ describe LogStash::Outputs::Monasca::MonascaLogApiClient do
   context 'when sending events failes' do
   	it 'then it should be rescued and a warn log printed' do
   	  expect_any_instance_of(Cabin::Channel).to receive(:warn)
-      monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080')
+      monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080', version)
       allow(monasca_log_api_client).to receive(:request).and_raise('an_error')
       monasca_log_api_client.send_event(nil, data, token, dimensions)
   	end
+  end
+
+  context 'api version checking' do
+
+    let (:supported_version) { %w(v2.0) }
+
+    it 'should pass for correct version' do
+      supported_version.each { |ver|
+        expect {LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080', ver)}.to_not raise_error
+      }
+    end
+
+    it 'should pass if version does not specify v' do
+      ver = '2.0'
+      expect {LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080', ver)}.to_not raise_error
+    end
+
+    it 'should fail for unsupported version' do
+      ver = 'v4.0'
+      expect {LogStash::Outputs::Monasca::MonascaLogApiClient.new('hostname:8080', ver)}.to raise_exception
+    end
   end
 
 end
