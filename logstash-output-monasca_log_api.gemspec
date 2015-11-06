@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.homepage = 'https://github.com/FujitsuEnablingSoftwareTechnologyGmbH/logstash-output-monasca_api'
 
   # Files
-  s.files = `git ls-files`.split($\)
+  s.files = Dir["lib/**/*", "spec/**/*", "*.gemspec", "*.md", "Gemfile", "LICENSE"]
   
   # Tests
   s.test_files = s.files.grep(%r{^(test|spec|features)/})
