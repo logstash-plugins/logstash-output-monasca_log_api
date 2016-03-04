@@ -1,4 +1,12 @@
 # Logstash Output Monasca-Log-Api Plugin
+This module is a logstash-output-plugin for the Monasca Log Api.
+
+## Get latest stable version
+https://rubygems.org/gems/logstash-output-monasca_log_api
+
+```bash
+gem install logstash-output-monasca_log_api
+```
 
 ## Build from source
 
@@ -9,25 +17,13 @@
 * Git
 * bundler
 
-### How to install the requirements
+### Install requirements
 
-#### Ubuntu 14.04
-
-##### RVM
+#### RVM
 ```bash
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 \curl -sSL https://get.rvm.io | bash
 source /home/vagrant/.rvm/scripts/rvm
-```
-
-#### Git
-```bash
-sudo apt-get install git
-```
-
-#### JDK
-```bash
-sudo apt-get install default-jdk
 ```
 
 #### JRuby
@@ -41,7 +37,7 @@ rvm install jruby
 git clone https://github.com/FujitsuEnablingSoftwareTechnologyGmbH/logstash-output-monasca_api.git
 ```
 
-### Use rvm jruby
+### Use jruby
 ```bash
 rvm use jruby
 ```
@@ -75,7 +71,14 @@ JRUBY_OPTS="-Xcli.debug=true --debug" bundle exec rspec
 
 Coverage report can be found in ./coverage
 
+### Code style check
+```bash
+rubocop lib/
+```
+
 ## Deploy Plugin to logstash
+
+Source: [https://www.elastic.co/guide/en/logstash/current/_how_to_write_a_logstash_output_plugin.html#_building_and_testing_4](https://www.elastic.co/guide/en/logstash/current/_how_to_write_a_logstash_output_plugin.html#_building_and_testing_4)
 
 ### Build Gemfile
 First we need to create a Gemfile.
@@ -89,7 +92,7 @@ gem build logstash-output-monasca_log_api.gemspec
 
 ### Deploy Gemfile to logstash
 
-* [Download logstash](http://download.elastic.co/logstash/logstash/logstash-1.5.0.tar.gz) (>=1.5.0)
+* [Download logstash](https://download.elastic.co/logstash/logstash/logstash-2.2.2.tar.gz) (>=2.2.0)
 * Extract logstash and navigate into the folder
 * Add this line to the Gemfile
 
@@ -112,34 +115,57 @@ With ``bin/plugin list`` you can check installed plugins. There should be ``logs
 
 ### Configuration
 
+Plugin name: monasca_log_api
+
 Save the configfile wherever you like. For example ~/logstash.conf
 
-| name | description | required | example |
-| - | - | - | - |
-| monasca_log_api | monasca log api url | yes | http://192.168.10.4:8080 |
-| keystone_api | keystone api url | yes | http://192.168.10.5:5000 |
-| project_name | User-credentials: keystone project name | yes | mini-mon |
-| username | User-credentials: keystone username | yes | admin-agent |
-| password | User-credentials: keystone user password | yes | password |
-| domain_id | User-credentials: keystone user domain-id | yes | default |
-| dimensions | Dictionary of key-value pairs to describe logs | no | hostname: monasca, ip: 192.168.10.4 |
-| application_type_key | Application name | no | monasca |
+| name | description | type | required | default | example |
+| --- | --- | --- | --- | --- | --- |
+| monasca_log_api | monasca log api url | string | true | | http://192.168.10.4:8080 |
+| monasca_log_api_version | monasca log api version | string | false | v3.0 | |
+| keystone_api | keystone api url | string | true | | http://192.168.10.5:35357/v3 |
+| project_name | Keystone user credentials: project name | string | true | | monasca |
+| username | Keystone user credentials: username | string | true | | admin-agent |
+| password | Keystone user credentials: password | string | true | | password |
+| domain_id | Keystone user credentials: domain-id | string | true | | default |
+| dimensions | global array dimensions in form of key-value pairs to describe the monitored node | array | false | | ['app_type:kafka', 'priority:high'] |
+| num_of_logs | maximum number of logs that are send by one request to monasca-log-api | number | false | 125 | |
+| elapsed_time_sec | send logs if the maximum elapsed time in seconds is reached | number | false | 30 | |
+| delay | delay time in seconds to wait before checking the elapsed_time_sec again | number | false | 10 | |
+| max_data_size_kb | maximum size in kb of logs that are send by one request to monasca-log-api | number | false | 5120 | |
 
-#### Example file
+#### Example configuration files
+
+##### Simple
 ```bash
-input {
-  stdin { }
-}
 output {
   monasca_log_api {
-    monasca_log_api => "http://192.168.10.4:8080"
-    keystone_api => "http://192.168.10.5:5000"
-    project_name => "mini-mon"
-    username => "admin-agent"
-    password => "password"
+    monasca_log_api => "http://192.168.10.4:8074"
+    keystone_api => "http://192.168.10.5:35357/v3"
+    project_name => "cmm"
+    username => "cmm-operator"
+    password => "admin"
     domain_id => "default"
-    dimensions => "hostname: elkstack, ip: 192.168.10.4"
-    application_type_key => "monasca"
+  }
+}
+```
+
+##### Complete
+```bash
+output {
+  monasca_log_api {
+    monasca_log_api => "http://192.168.10.4:8074"
+    monasca_log_api_version => "v3.0"
+    keystone_api => "http://192.168.10.5:35357/v3"
+    project_name => "cmm"
+    username => "cmm-operator"
+    password => "admin"
+    domain_id => "default"
+    dimensions => ["hostname:kamil", "ip:10.10.10.10"]
+    num_of_logs => 100
+    delay => 1
+    elapsed_time_sec => 600
+    max_data_size_kb => 5120
   }
 }
 ```
@@ -158,10 +184,26 @@ Specify log output file
 ```bash
 bin/logstash -f ~/logstash.conf -l /var/log/monasca/log/agent/test-log-agent.log
 ```
-### Logstash Input plugins
-https://www.elastic.co/guide/en/logstash/current/input-plugins.html
+
+### Logstash File Input plugin
+https://www.elastic.co/guide/en/logstash/current/plugins-inputs-file.html
+
+#### Configuration
+
+Local dimensions can be added with ```add_field``` setting
+
+```bash
+input {
+  file {
+    add_field => { "dimensions" => { "service" => "monasca-api" }}
+    add_field => { "dimensions" => { "language" => "java" }}
+    add_field => { "dimensions" => { "log_level" => "error" }}
+    path => "/var/log/monasca/api/error.log"
+    }
+  }
+```
 
 ## Open tasks
 * Language translations (Replace hardcoded String messages with a configuration/language file)
 * Exception handling (monasca-api requests)
-* Contribute to logstash http://www.elastic.co/guide/en/logstash/master/_how_to_write_a_logstash_output_plugin.html#_contributing_your_source_code_to_ulink_url_https_github_com_logstash_plugins_logstash_plugins_ulink_4
+* https support
