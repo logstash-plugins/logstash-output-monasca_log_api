@@ -15,13 +15,17 @@
 # encoding: utf-8
 
 require_relative '../spec_helper'
+require 'webmock/rspec'
 
 describe LogStash::Outputs::Keystone::KeystoneClient do
 
+  let (:keystone_url) { 'http://keystone:5000/v3' }
+  let (:keystone_url_post) { keystone_url + '/auth/tokens' }
+  let (:keystone_url_https) { 'https://keystone:5000/v3' }
   let (:valid_date) { DateTime.now + Rational(1, 1440) }
   let (:token) { "f8cdafb7dce94444ad781a53ddaff693" }
-  let (:valid_token) { {:token => token,
-    :expires_at => valid_date } }
+  let (:valid_token) { {"token" => token,
+    "expires_at" => valid_date } }
   let (:domain_id) { "default" }
   let (:username) { "operator" }
   let (:password) { "zPrHGl<IJtn=ux;{&T/nfXh=H" }
@@ -49,8 +53,7 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
     }.to_json
   }
 
-  let (:ok_response) { stub_response(201,
-    {:x_subject_token => token},
+  let (:ok_response_body) {
     {
       "token"=>{
         "methods"=>["password"],
@@ -84,11 +87,10 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
         "audit_ids"=>["ORap7R56S2S-p6tFVeMkpg"],
         "issued_at"=>"2015-05-26T07:55:36.774146Z"
       }
-    }.to_json)
+    }.to_json
   }
 
-  let (:failed_response) { stub_response(401,
-    {:x_subject_token => ""},
+  let (:failed_response_body) {
     {
       "error"=>{
         "message"=>"Could not find project: f8cdafb7dce94444ad781a53ddaff693 "\
@@ -96,13 +98,13 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
         "code"=>401,
         "title"=>"Unauthorized"
       }
-    }.to_json)
+    }.to_json
   }
 
   context 'when initializing' do
     it 'then it should register without exceptions' do
-      expect {LogStash::Outputs::Keystone::KeystoneClient.new('hostname:8080')}
-        .to_not raise_error
+      expect {LogStash::Outputs::Keystone::KeystoneClient
+        .new(keystone_url)}.to_not raise_error
     end
 
     it "returns a failure if arguments are missing" do
@@ -113,57 +115,73 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
 
   context 'when authenticates' do
     it 'then it should request to keystone' do
-      expect_any_instance_of(RestClient::Resource).to receive(:post)
-        .with(auth_hash, :content_type => 'application/json',
-          :accept => 'application/json').and_return(ok_response)
+      expect_any_instance_of(Net::HTTP).to receive(:request)
+        .with(an_instance_of(Net::HTTP::Post))
 
       keystone_client = LogStash::Outputs::Keystone::KeystoneClient
-        .new('hostname:8080')
+        .new(keystone_url)
       keystone_client.authenticate(domain_id, username, password, project_name)
     end
 
     it 'then it should return a token' do
-      expect_any_instance_of(RestClient::Resource).to receive(:post)
-        .and_return(ok_response)
+
+      stub_request(:post, keystone_url_post)
+         .to_return(:status => 201,
+                    :body => ok_response_body,
+                    :headers => { 'X-Subject-Token' => token })
+
       keystone_client = LogStash::Outputs::Keystone::KeystoneClient
-        .new('hostname:8080')
+        .new(keystone_url)
       token = keystone_client
         .authenticate(domain_id, username, password, project_name)
-      expect(token["token"]).to eq(valid_token["token"])
-      expect(token["expires_at"].to_s).to eq(valid_token["expires_at"].to_s)
+
+      expect(token[:token]).to eq(valid_token["token"])
+      expect(token[:expires_at].to_s).to eq(valid_token["expires_at"].to_s)
     end
   end
 
   context 'when authentication failed' do
     it 'then it should log an information' do
-      expect_any_instance_of(RestClient::Resource).to receive(:post)
-        .and_return(failed_response)
       expect_any_instance_of(Cabin::Channel).to receive(:info)
 
+      stub_request(:post, keystone_url_post)
+         .to_return(:status => 401,
+                    :body => failed_response_body)
+
       keystone_client = LogStash::Outputs::Keystone::KeystoneClient
-        .new('hostname:8080')
+        .new(keystone_url)
       keystone_client.authenticate(domain_id, username, password, project_name)
     end
 
     it 'then it should return nil' do
-      expect_any_instance_of(RestClient::Resource).to receive(:post)
-        .and_return(failed_response)
       expect_any_instance_of(Cabin::Channel).to receive(:info)
 
+      stub_request(:post, keystone_url_post)
+         .to_return(:status => 401,
+                    :body => failed_response_body)
+
       keystone_client = LogStash::Outputs::Keystone::KeystoneClient
-        .new('hostname:8080')
+        .new(keystone_url)
       expect(keystone_client
         .authenticate(domain_id, username, password, project_name)).to eq(nil)
     end
   end
 
-  private
+  context 'when using https' do
+    it 'should change use_ssl property' do
+      client = LogStash::Outputs::Keystone::KeystoneClient
+        .new(keystone_url_https)
+      http = client.instance_variable_get(:@http)
+      expect(http.use_ssl?).to be true
+      expect(http.verify_mode).to eq(nil)
+    end
 
-  def stub_response(code, headers, body)
-    response = double
-    allow(response).to receive(:code) { code }
-    allow(response).to receive(:headers) { headers }
-    allow(response).to receive(:body) { body }
-    response
+    it 'in case of insecure mode it should change verify_mode property' do
+      client = LogStash::Outputs::Keystone::KeystoneClient
+        .new(keystone_url_https, true)
+      http = client.instance_variable_get(:@http)
+      expect(http.use_ssl?).to be true
+      expect(http.verify_mode).to eq(OpenSSL::SSL::VERIFY_NONE)
+    end
   end
 end

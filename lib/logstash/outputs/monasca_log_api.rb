@@ -32,12 +32,14 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
   config_name 'monasca_log_api'
 
   # monasca-log-api configuration
-  config :monasca_log_api, :validate => :string, :required => true
-  config :monasca_log_api_version, :validate => :string, :required => false,
-    :default => "v3.0"
+  config :monasca_log_api_url, :validate => :string, :required => true
+  config :monasca_log_api_insecure, :validate => :boolean, :required => false,
+    :default => false
 
   # keystone configuration
-  config :keystone_api, :validate => :string, :required => true
+  config :keystone_api_url, :validate => :string, :required => true
+  config :keystone_api_insecure, :validate => :boolean, :required => false,
+    :default => false
   config :project_name, :validate => :string, :required => true
   config :username, :validate => :string, :required => true
   config :password, :validate => :string, :required => true
@@ -64,7 +66,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
     @logger.info('Registering keystone user',
       :username => username, :project_name => project_name)
     @monasca_log_api_client = LogStash::Outputs::Monasca::MonascaLogApiClient
-      .new monasca_log_api, monasca_log_api_version
+      .new monasca_log_api_url, monasca_log_api_insecure
     @logs = Hash.new
     @start_time = nil
     init_token
@@ -87,13 +89,12 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
 
   def init_token
     token = LogStash::Outputs::Keystone::Token.instance
-    token.set_keystone_client(keystone_api)
+    token.set_keystone_client(keystone_api_url, keystone_api_insecure)
     check_token
   end
 
   def encode(event)
     log = generate_log_from_event(event)
-
     log_bytesize = bytesize_of(log)
     logs_bytesize = bytesize_of(@logs)
 

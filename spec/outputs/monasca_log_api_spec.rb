@@ -25,7 +25,7 @@ describe 'outputs/monasca_log_api' do
       '@version' => '1',
       '@timestamp' => '2015-08-13T08:37:00.287Z',
       'path' => '/opt/logstash-2.2.0/test.log',
-      'host' => 'kamil-choroba',
+      'host' => 'monasca',
       'type' => 'test-type',
       'tags' => ['test-service', 'high']
     })
@@ -56,7 +56,7 @@ describe 'outputs/monasca_log_api' do
       '@version' => '1',
       '@timestamp' => '2015-08-13T08:37:00.287Z',
       'path' => '/opt/logstash-2.2.0/test.log',
-      'host' => 'kamil-choroba',
+      'host' => 'monasca',
       'type' => 'test-type',
       'dimensions' => '["[\"service\", \"nova\"]", "[\"priority\", \"high\"]"]',
       'tags' => ['test-service', 'high']
@@ -69,7 +69,7 @@ describe 'outputs/monasca_log_api' do
       '@version' => '1',
       '@timestamp' => '2015-08-13T08:37:00.287Z',
       'path' => '/opt/logstash-2.2.0/test.log',
-      'host' => 'kamil-choroba',
+      'host' => 'monasca',
       'type' => 'test-type',
       'tags' => ['test-service', 'high']
     })
@@ -81,7 +81,7 @@ describe 'outputs/monasca_log_api' do
       '@version' => '1',
       '@timestamp' => '2015-08-13T08:37:00.287Z',
       'path' => '/opt/logstash-2.2.0/test.log',
-      'host' => 'kamil-choroba',
+      'host' => 'monasca',
       'type' => 'test-type',
       'dimensions' => '["service", "nova"]',
       'tags' => ['test-service', 'high']
@@ -94,7 +94,7 @@ describe 'outputs/monasca_log_api' do
       '@version' => '1',
       '@timestamp' => '2015-08-13T08:37:00.287Z',
       'path' => '/opt/logstash-2.2.0/test.log',
-      'host' => 'kamil-choroba',
+      'host' => 'monasca',
       'type' => 'test-type',
       'dimensions' => '["[\"service\", \"nova\"]", "[\"priority\", \"high\"]"]',
       'tags' => ['test-service', 'high']
@@ -105,11 +105,15 @@ describe 'outputs/monasca_log_api' do
   let (:username) { 'operator' }
   let (:password) { 'qweqwe' }
 
+  let (:monasca_log_api_url) { 'http://192.168.10.4:5607/v3.0' }
+  let (:keystone_api_url) { 'http://192.168.10.5:5000/v3' }
+
   let (:complete_config) {
     {
-      'monasca_log_api' => 'http://192.168.10.4:8080',
-      'monasca_log_api_version' => 'v3.0',
-      'keystone_api' => 'http://192.168.10.5:5000',
+      'monasca_log_api_url' => monasca_log_api_url,
+      'monasca_log_api_insecure' => false,
+      'keystone_api_url' => keystone_api_url,
+      'keystone_api_insecure' => false,
       'project_name' => project_name,
       'username' => username,
       'password' => password,
@@ -124,9 +128,10 @@ describe 'outputs/monasca_log_api' do
 
   let (:complete_config_short_elapsed_time) {
     {
-      'monasca_log_api' => 'http://192.168.10.4:8080',
-      'monasca_log_api_version' => 'v3.0',
-      'keystone_api' => 'http://192.168.10.5:5000',
+      'monasca_log_api_url' => monasca_log_api_url,
+      'monasca_log_api_insecure' => false,
+      'keystone_api_url' => keystone_api_url,
+      'keystone_api_insecure' => false,
       'project_name' => project_name,
       'username' => username,
       'password' => password,
@@ -141,8 +146,8 @@ describe 'outputs/monasca_log_api' do
 
   let (:simple_config) {
     {
-      'monasca_log_api' => 'http://192.168.10.4:8080',
-      'keystone_api' => 'http://192.168.10.5:5000',
+      'monasca_log_api_url' => monasca_log_api_url,
+      'keystone_api_url' => keystone_api_url,
       'project_name' => project_name,
       'username' => username,
       'password' => password,
@@ -179,8 +184,7 @@ describe 'outputs/monasca_log_api' do
       monasca_log_api = LogStash::Plugin.lookup('output', 'monasca_log_api')
         .new(simple_config)
 
-      expect(monasca_log_api.monasca_log_api_version).to be_instance_of(String)
-      expect(monasca_log_api.monasca_log_api_version).not_to be_empty
+      expect(monasca_log_api.monasca_log_api_insecure).to be_falsey
       expect(monasca_log_api.dimensions).to be_nil
       expect(monasca_log_api.num_of_logs).to be_instance_of(Fixnum)
       expect(monasca_log_api.elapsed_time_sec).to be_instance_of(Fixnum)
@@ -192,8 +196,8 @@ describe 'outputs/monasca_log_api' do
       monasca_log_api = LogStash::Plugin.lookup('output', 'monasca_log_api')
         .new(complete_config)
 
-      expect(monasca_log_api.monasca_log_api_version)
-        .to eq(complete_config['monasca_log_api_version'])
+      expect(monasca_log_api.monasca_log_api_insecure)
+        .to eq(complete_config['monasca_log_api_insecure'])
       expect(monasca_log_api.dimensions).to eq(complete_config['dimensions'])
       expect(monasca_log_api.num_of_logs).to eq(complete_config['num_of_logs'])
       expect(monasca_log_api.elapsed_time_sec)

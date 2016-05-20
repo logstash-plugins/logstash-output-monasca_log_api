@@ -15,65 +15,117 @@
 # encoding: utf-8
 
 require_relative '../spec_helper'
+require 'webmock/rspec'
 
 describe LogStash::Outputs::Monasca::MonascaLogApiClient do
 
-  let (:version) { '3.0' }
-  let (:valid_date) { DateTime.now + Rational(1, 1440) }
-  let (:token) { LogStash::Outputs::Keystone::Token
-    .instance.set_token('abc', valid_date) }
-  let (:logs) {  }
+  let (:monasca_log_api_url) { 'http://monasca-log-api:5607/v3.0' }
+  let (:monasca_log_api_url_https) { 'https://monasca-log-api:5607/v3.0' }
+  let (:monasca_log_api_url_post) { monasca_log_api_url + "/logs" }
+  let (:token) { "f8cdafb7dce94444ad781a53ddaff693" }
+  let (:logs) {
+    {
+      "dimensions" =>
+        { "hostname" => "monasca",
+          "ip" => "192.168.10.4"
+        },
+      "logs" =>
+        [
+          {
+            "message" => "x-image-meta-min_disk: 0",
+            "dimensions" =>
+              {
+                "path" => "/var/log/monasca/log-api/info.log",
+                "service" => "monasca-log-api",
+                "language" => "python"
+              }
+          }
+        ]
+    }
+  }
+
   let (:header) { header = { 'X-Auth-Token' => token,
     'Content-Type' => 'application/json' } }
-
-  before(:each) do
-    stub_const(
-      "LogStash::Outputs::Monasca::MonascaLogApiClient::SUPPORTED_API_VERSION",
-      [version])
-  end
 
   context 'when initializing' do
     it 'then it should register without exceptions' do
       expect {LogStash::Outputs::Monasca::MonascaLogApiClient
-        .new('hostname:8080', 'v3.0')}.to_not raise_error
+        .new(monasca_log_api_url)}.to_not raise_error
+
+      expect {LogStash::Outputs::Monasca::MonascaLogApiClient
+        .new(monasca_log_api_url, false)}.to_not raise_error
+
+      expect {LogStash::Outputs::Monasca::MonascaLogApiClient
+        .new(monasca_log_api_url, true)}.to_not raise_error
     end
   end
 
   context 'when requesting to monasca-log-api' do
     it 'sends x-auth-token and content-type in header, logs in body' do
+      expect_any_instance_of(Cabin::Channel).to_not receive(:error)
+
+      stub_request(:post, monasca_log_api_url_post)
+        .with(:headers => {
+          'Accept'=>'*/*',
+          'Content-Type'=>'application/json',
+          'User-Agent'=>'Ruby',
+          'X-Auth-Token'=>'f8cdafb7dce94444ad781a53ddaff693'})
+        .to_return(:status => 204)
+
       client = LogStash::Outputs::Monasca::MonascaLogApiClient
-        .new('hostname:8080', 'v3.0')
-      expect_any_instance_of(RestClient::Resource).to receive(:post)
-        .with(logs.to_json, header)
+        .new(monasca_log_api_url)
+
       client.send_logs(logs, token)
+    end
+  end
+
+  context 'when using https' do
+    it 'should change use_ssl property' do
+      client = LogStash::Outputs::Monasca::MonascaLogApiClient
+        .new(monasca_log_api_url_https)
+      http = client.instance_variable_get(:@http)
+      expect(http.use_ssl?).to be true
+      expect(http.verify_mode).to eq(nil)
+    end
+
+    it 'in case of insecure mode it should change verify_mode property' do
+      client = LogStash::Outputs::Monasca::MonascaLogApiClient
+        .new(monasca_log_api_url_https, true)
+      http = client.instance_variable_get(:@http)
+      expect(http.use_ssl?).to be true
+      expect(http.verify_mode).to eq(OpenSSL::SSL::VERIFY_NONE)
     end
   end
 
   context 'when request failed' do
-    it 'rescued the exception and logs a failure' do
+    it 'logs a failure' do
+      expect_any_instance_of(Cabin::Channel).to receive(:error)
+
+      stub_request(:post, monasca_log_api_url_post)
+        .with(:headers => {
+          'Accept'=>'*/*',
+          'Content-Type'=>'application/json',
+          'User-Agent'=>'Ruby',
+          'X-Auth-Token'=>'f8cdafb7dce94444ad781a53ddaff693'})
+        .to_return(:status => 401)
+
       client = LogStash::Outputs::Monasca::MonascaLogApiClient
-        .new('hostname:8080', 'v3.0')
-      expect_any_instance_of(Cabin::Channel).to receive(:warn)
-      expect_any_instance_of(RestClient::Resource).to receive(:post)
-        .and_raise(Errno::ECONNREFUSED)
+        .new(monasca_log_api_url)
+
       client.send_logs(logs, token)
     end
   end
 
-  context 'api version checking' do
-    it 'should pass for correct version' do
-      expect {LogStash::Outputs::Monasca::MonascaLogApiClient
-        .new('hostname:8080', 'v3.0')}.to_not raise_error
-    end
+  context 'when request throws an exception' do
+    it 'rescued the exception and logs a failure' do
+      expect_any_instance_of(Cabin::Channel).to receive(:warn)
 
-    it 'should pass if version does not specify v' do
-      expect {LogStash::Outputs::Monasca::MonascaLogApiClient
-        .new('hostname:8080', '3.0')}.to_not raise_error
-    end
+      stub_request(:post, monasca_log_api_url_post)
+        .to_raise(Errno::ECONNREFUSED)
 
-    it 'should fail for unsupported version' do
-      expect {LogStash::Outputs::Monasca::MonascaLogApiClient
-        .new('hostname:8080', 'v4.0')}.to raise_exception
+      client = LogStash::Outputs::Monasca::MonascaLogApiClient
+        .new(monasca_log_api_url)
+      client.send_logs(logs, token)
     end
   end
 

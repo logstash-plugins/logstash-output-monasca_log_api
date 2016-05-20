@@ -16,8 +16,9 @@
 
 require 'logstash/environment'
 require 'logger'
+require 'json'
+require 'net/http'
 
-require_relative '../helper/url_helper'
 require_relative './token'
 
 # This class connects to keystone and authenticates an user.
@@ -28,29 +29,33 @@ module LogStash::Outputs
 
       @client = nil
 
-      def initialize(host)
+      def initialize(url, insecure=false)
         @logger = Cabin::Channel.get(LogStash)
-        @client = get_client(host, '/v3/auth/tokens')
+        @uri = URI.parse(url)
+        @http = Net::HTTP.new(@uri.host, @uri.port)
+        if @uri.scheme == 'https'
+          @http.use_ssl = true
+          @http.verify_mode = OpenSSL::SSL::VERIFY_NONE if insecure
+        end
       end
 
       def authenticate(domain_id, username, password, project_name)
         auth_hash = generate_hash(domain_id, username, password, project_name)
-        response = request(auth_hash)
+        post_header = {
+              'Accept' => 'application/json',
+              'Content-Type' => 'application/json',
+          }
+        response = request('/auth/tokens', post_header, auth_hash)
         handle_response(response)
       end
 
       private
 
-      def request(auth_hash)
-        @client.post(
-          auth_hash,
-          :content_type => 'application/json',
-          :accept => 'application/json')
-      end
-
-      def get_client(host, path)
-        RestClient::Resource.new(
-          LogStash::Outputs::Helper::UrlHelper.generate_url(host, path).to_s)
+      def request(path, header, body)
+        @logger.debug('Sending authentication to ', :url => @uri.to_s)
+        post_request = Net::HTTP::Post.new(@uri.request_uri + path, header)
+        post_request.body = body
+        @http.request(post_request)
       end
 
       def generate_hash(domain_id, username, password, project_name)
@@ -77,16 +82,16 @@ module LogStash::Outputs
       end
 
       def handle_response(response)
-        case response.code
-        when 201
+        case response
+        when Net::HTTPCreated
           expires_at = DateTime.parse(
             JSON.parse(response.body)["token"]["expires_at"])
 
           @logger.debug("Authentication succeed: code=#{response.code}, "\
-            "auth-token=#{response.headers[:x_subject_token]}, "\
+            "auth-token=#{response['X-Subject-Token']}, "\
             "expires_at=#{expires_at.to_time}")
 
-          {:token => response.headers[:x_subject_token],
+          {:token => response['X-Subject-Token'],
             :expires_at => expires_at}
         else
           @logger.info("Authentication failed. Response=#{response}")

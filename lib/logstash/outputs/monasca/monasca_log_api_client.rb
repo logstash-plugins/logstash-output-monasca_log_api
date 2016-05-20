@@ -14,25 +14,23 @@
 
 # encoding: utf-8
 
-require 'rest-client'
 require 'logger'
-require 'singleton'
-
-# relative requirements
-require_relative '../helper/url_helper'
+require 'json'
+require 'net/http'
 
 # This class creates a connection to monasca-log-api
 module LogStash::Outputs
   module Monasca
     class MonascaLogApiClient
 
-      SUPPORTED_API_VERSION = %w(3.0)
-
-      def initialize(host, version)
+      def initialize(url, insecure=false)
         @logger = Cabin::Channel.get(LogStash)
-        rest_client_url = LogStash::Outputs::Helper::UrlHelper
-          .generate_url(host, '/' + check_version(version)).to_s
-        @rest_client = RestClient::Resource.new(rest_client_url)
+        @uri = URI.parse(url)
+        @http = Net::HTTP.new(@uri.host, @uri.port)
+        if @uri.scheme == 'https'
+          @http.use_ssl = true
+          @http.verify_mode = OpenSSL::SSL::VERIFY_NONE if insecure
+        end
       end
 
       def send_logs(logs, auth_token)
@@ -41,7 +39,8 @@ module LogStash::Outputs
               'X-Auth-Token' => auth_token,
               'Content-Type' => 'application/json',
           }
-          request(logs.to_json, post_header)
+          response = request('/logs', post_header, logs.to_json)
+          handle_response(response)
         rescue => e
           @logger.warn('Sending event to monasca-log-api threw exception',
             :exceptionew => e)
@@ -50,20 +49,21 @@ module LogStash::Outputs
 
       private
 
-      def request(body, header)
-        @logger.debug('Sending data to ', :url => @rest_client.url)
-        @rest_client['logs'].post(body, header)
+      def request(path, header, body)
+        @logger.debug('Sending data to ', :url => @uri.to_s)
+        post_request = Net::HTTP::Post.new(@uri.request_uri + path, header)
+        post_request.body = body
+        @http.request(post_request)
       end
 
-      def check_version(version)
-        tmp_version = version.sub('v','')
-
-        unless SUPPORTED_API_VERSION.include? tmp_version
-          raise "#{tmp_version} is not supported, "\
-            "supported versions are #{SUPPORTED_API_VERSION}"
+      def handle_response(response)
+        case response
+        when Net::HTTPNoContent
+          @logger.debug("Successfully sent logs")
+        else
+          # TODO: Handle logs which could not be sent
+          @logger.error("Failed to send logs. Response=#{response}")
         end
-
-        version
       end
 
     end
