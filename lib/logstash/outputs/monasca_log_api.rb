@@ -60,6 +60,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
 
   public
   def register
+    check_config
     @mutex = Mutex.new
     @logger.info('Registering keystone user',
       :username => username, :project_name => project_name)
@@ -213,4 +214,15 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
     end
   end
 
+  def check_config
+    bad_val = []
+    bad_val << 'num_of_logs' if num_of_logs <= 0
+    bad_val << 'elapsed_time_sec' if elapsed_time_sec <= 0
+    bad_val << 'delay' if delay <= 0
+    bad_val << 'max_data_size_kb' if max_data_size_kb <= 0
+    unless bad_val.empty?
+      err = "Value of #{bad_val.join(', ')} need to be bigger than 0"
+      raise LogStash::ConfigurationError, err
+    end
+  end
 end

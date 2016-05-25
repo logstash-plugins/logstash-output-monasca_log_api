@@ -150,6 +150,21 @@ describe 'outputs/monasca_log_api' do
     }
   }
 
+  let (:config_negative) {
+    {
+      'monasca_log_api'  => 'http://192.168.10.4:8080',
+      'keystone_api'     => 'http://192.168.10.5:5000',
+      'project_name'     => project_name,
+      'username'         => username,
+      'password'         => password,
+      'domain_id'        => 'abadcf984cf7401e88579d393317b0d9',
+      'num_of_logs'      => rand(-999_999..-1),
+      'elapsed_time_sec' => rand(-999_999..-1),
+      'delay'            => rand(-999_999..-1),
+      'max_data_size_kb' => rand(-999_999..-1),
+    }
+  }
+
   let (:empty_config) { {} }
 
   let (:valid_date) { DateTime.now + Rational(5, 1440) }
@@ -201,6 +216,14 @@ describe 'outputs/monasca_log_api' do
       expect(monasca_log_api.delay).to eq(complete_config['delay'])
       expect(monasca_log_api.max_data_size_kb)
         .to eq(complete_config['max_data_size_kb'])
+    end
+
+    it 'with negative numbers in configuration, then raise error' do
+      monasca_log_api = LogStash::Plugin.lookup('output', 'monasca_log_api')
+        .new(config_negative)
+
+      expect { monasca_log_api.register }
+        .to raise_error(LogStash::ConfigurationError), config_negative.to_s
     end
   end
 
