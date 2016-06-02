@@ -121,9 +121,10 @@ Save the configfile wherever you like. For example ~/logstash.conf
 
 | name | description | type | required | default | example |
 | --- | --- | --- | --- | --- | --- |
-| monasca_log_api | monasca log api url | string | true | | http://192.168.10.4:8080 |
-| monasca_log_api_version | monasca log api version | string | false | v3.0 | |
-| keystone_api | keystone api url | string | true | | http://192.168.10.5:35357/v3 |
+| monasca_log_api_url | monasca log api url | string | true | | https://192.168.10.4:5607/v3.0 |
+| monasca_log_api_insecure | set to true if monasca-log-api is using an insecure ssl certificate  | boolean | false | false | |
+| keystone_api_url | keystone api url | string | true | | http://192.168.10.5:35357/v3 |
+| keystone_api_insecure | set to true if keystone is using an insecure ssl certificate | boolean | false | false | |
 | project_name | Keystone user credentials: project name | string | true | | monasca |
 | username | Keystone user credentials: username | string | true | | admin-agent |
 | password | Keystone user credentials: password | string | true | | password |
@@ -140,8 +141,8 @@ Save the configfile wherever you like. For example ~/logstash.conf
 ```bash
 output {
   monasca_log_api {
-    monasca_log_api => "http://192.168.10.4:8074"
-    keystone_api => "http://192.168.10.5:35357/v3"
+    monasca_log_api_url => "http://192.168.10.4:8074/v3.0"
+    keystone_api_url => "http://192.168.10.5:35357/v3"
     project_name => "cmm"
     username => "cmm-operator"
     password => "admin"
@@ -154,17 +155,18 @@ output {
 ```bash
 output {
   monasca_log_api {
-    monasca_log_api => "http://192.168.10.4:8074"
-    monasca_log_api_version => "v3.0"
-    keystone_api => "http://192.168.10.5:35357/v3"
+    monasca_log_api_url => "https://192.168.10.4:5607/v3.0"
+    monasca_log_api_insecure => true
+    keystone_api_url => "http://192.168.10.5:35357/v3"
+    keystone_api_insecure => false
     project_name => "cmm"
     username => "cmm-operator"
     password => "admin"
     domain_id => "default"
-    dimensions => ["hostname:kamil", "ip:10.10.10.10"]
-    num_of_logs => 100
-    delay => 1
-    elapsed_time_sec => 600
+    dimensions => ["hostname: monasca", "ip:192.168.10.4"]
+    num_of_logs => 125
+    delay => 10
+    elapsed_time_sec => 30
     max_data_size_kb => 5120
   }
 }
@@ -206,4 +208,3 @@ input {
 ## Open tasks
 * Language translations (Replace hardcoded String messages with a configuration/language file)
 * Exception handling (monasca-api requests)
-* https support

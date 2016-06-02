@@ -37,9 +37,9 @@ module LogStash::Outputs
         @expires_at = expires_at
       end
 
-      def set_keystone_client keystone_api
+      def set_keystone_client(keystone_api, insecure)
         @keystone_client = LogStash::Outputs::Keystone::KeystoneClient
-          .new keystone_api
+          .new(keystone_api, insecure)
       end
 
       def initialize
