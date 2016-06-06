@@ -157,15 +157,15 @@ describe 'outputs/monasca_log_api' do
 
   let (:config_negative) {
     {
-      'monasca_log_api'  => 'http://192.168.10.4:8080',
-      'keystone_api'     => 'http://192.168.10.5:5000',
-      'project_name'     => project_name,
-      'username'         => username,
-      'password'         => password,
-      'domain_id'        => 'abadcf984cf7401e88579d393317b0d9',
-      'num_of_logs'      => rand(-999_999..-1),
+      'monasca_log_api_url' => monasca_log_api_url,
+      'keystone_api_url' => keystone_api_url,
+      'project_name' => project_name,
+      'username' => username,
+      'password' => password,
+      'domain_id' => 'abadcf984cf7401e88579d393317b0d9',
+      'num_of_logs' => rand(-999_999..-1),
       'elapsed_time_sec' => rand(-999_999..-1),
-      'delay'            => rand(-999_999..-1),
+      'delay' => rand(-999_999..-1),
       'max_data_size_kb' => rand(-999_999..-1),
     }
   }

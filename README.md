@@ -141,7 +141,7 @@ Save the configfile wherever you like. For example ~/logstash.conf
 ```bash
 output {
   monasca_log_api {
-    monasca_log_api_url => "http://192.168.10.4:8074/v3.0"
+    monasca_log_api_url => "http://192.168.10.4:5607/v3.0"
     keystone_api_url => "http://192.168.10.5:35357/v3"
     project_name => "cmm"
     username => "cmm-operator"
