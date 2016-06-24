@@ -1,0 +1,1 @@
+# logstash-output-monasca_log_api
