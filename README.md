@@ -1,4 +1,4 @@
-# Logstash Output Monasca-Log-Api Plugin
+# logstash-output-monasca_log_api
 This module is a logstash-output-plugin for the Monasca Log Api.
 
 ## Get latest stable version
