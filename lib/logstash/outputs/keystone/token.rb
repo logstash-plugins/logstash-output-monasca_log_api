@@ -24,9 +24,9 @@ module LogStash::Outputs
       include Singleton
       attr_accessor :id, :expires_at, :keystone_client
 
-      def request_new_token(domain_id, username, password, project_name)
+      def request_new_token(user_domain_name, username, password, project_name, project_domain_name)
         token = @keystone_client
-          .authenticate(domain_id, username, password, project_name)
+          .authenticate(user_domain_name, username, password, project_name, project_domain_name)
         set_token(token[:token], token[:expires_at])
         @logger.info("New token requested")
         @logger.debug("token=#{@id}, expire_at=#{@expires_at}")

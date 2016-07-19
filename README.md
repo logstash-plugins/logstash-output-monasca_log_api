@@ -128,7 +128,8 @@ Save the configfile wherever you like. For example ~/logstash.conf
 | project_name | Keystone user credentials: project name | string | true | | monasca |
 | username | Keystone user credentials: username | string | true | | admin-agent |
 | password | Keystone user credentials: password | string | true | | password |
-| domain_id | Keystone user credentials: domain-id | string | true | | default |
+| user_domain_name | Keystone user credentials: domain-id | string | true | | default |
+| project_domain_name | Keystone user credentials: domain-id | string | true | | default |
 | dimensions | global array dimensions in form of key-value pairs to describe the monitored node | array | false | | ['app_type:kafka', 'priority:high'] |
 | num_of_logs | maximum number of logs that are send by one request to monasca-log-api | number | false | 125 | |
 | elapsed_time_sec | send logs if the maximum elapsed time in seconds is reached | number | false | 30 | |
@@ -162,7 +163,8 @@ output {
     project_name => "cmm"
     username => "cmm-operator"
     password => "admin"
-    domain_id => "default"
+    user_domain_name => "Default"
+    project_domain_name => "Default"
     dimensions => ["hostname: monasca", "ip:192.168.10.4"]
     num_of_logs => 125
     delay => 10

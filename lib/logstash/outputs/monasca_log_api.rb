@@ -43,7 +43,8 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
   config :project_name, :validate => :string, :required => true
   config :username, :validate => :string, :required => true
   config :password, :validate => :string, :required => true
-  config :domain_id, :validate => :string, :required => true
+  config :user_domain_name, :validate => :string, :required => true
+  config :project_domain_name, :validate => :string, :required => true
 
   # global dimensions
   config :dimensions, :validate => :array, :required => false
@@ -165,7 +166,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
   def check_token
     token = LogStash::Outputs::Keystone::Token.instance
     token.request_new_token(
-      domain_id, username, password, project_name) unless token.valid?
+      project_domain_id, username, password, project_name) unless token.valid?
   end
 
   def start_time_check
