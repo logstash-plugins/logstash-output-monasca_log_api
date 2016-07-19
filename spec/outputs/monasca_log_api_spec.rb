@@ -102,7 +102,9 @@ describe 'outputs/monasca_log_api' do
   }
 
   let (:project_name) { 'monasca' }
+  let (:project_domain_name) { 'Admin' }
   let (:username) { 'operator' }
+  let (:user_domain_name) { 'Default' }
   let (:password) { 'qweqwe' }
 
   let (:monasca_log_api_url) { 'http://192.168.10.4:5607/v3.0' }
@@ -115,9 +117,10 @@ describe 'outputs/monasca_log_api' do
       'keystone_api_url' => keystone_api_url,
       'keystone_api_insecure' => false,
       'project_name' => project_name,
+      'project_domain_name' => project_domain_name,
       'username' => username,
+      'user_domain_name' => user_domain_name,
       'password' => password,
-      'domain_id' => 'abadcf984cf7401e88579d393317b0d9',
       'dimensions' => ['service:test'],
       'num_of_logs' => 3,
       'elapsed_time_sec' => 5000,
@@ -133,9 +136,10 @@ describe 'outputs/monasca_log_api' do
       'keystone_api_url' => keystone_api_url,
       'keystone_api_insecure' => false,
       'project_name' => project_name,
+      'project_domain_name' => project_domain_name,
       'username' => username,
+      'user_domain_name' => user_domain_name,
       'password' => password,
-      'domain_id' => 'abadcf984cf7401e88579d393317b0d9',
       'dimensions' => ['service:test'],
       'num_of_logs' => 3,
       'elapsed_time_sec' => 1,
@@ -149,9 +153,10 @@ describe 'outputs/monasca_log_api' do
       'monasca_log_api_url' => monasca_log_api_url,
       'keystone_api_url' => keystone_api_url,
       'project_name' => project_name,
+      'project_domain_name' => project_domain_name,
       'username' => username,
+      'user_domain_name' => user_domain_name,
       'password' => password,
-      'domain_id' => 'abadcf984cf7401e88579d393317b0d9',
     }
   }
 
@@ -160,9 +165,10 @@ describe 'outputs/monasca_log_api' do
       'monasca_log_api_url' => monasca_log_api_url,
       'keystone_api_url' => keystone_api_url,
       'project_name' => project_name,
+      'project_domain_name' => project_domain_name,
       'username' => username,
+      'user_domain_name' => user_domain_name,
       'password' => password,
-      'domain_id' => 'abadcf984cf7401e88579d393317b0d9',
       'num_of_logs' => rand(-999_999..-1),
       'elapsed_time_sec' => rand(-999_999..-1),
       'delay' => rand(-999_999..-1),
@@ -433,10 +439,11 @@ describe 'outputs/monasca_log_api' do
       expect_any_instance_of(LogStash::Outputs::Monasca::MonascaLogApiClient)
         .to receive(:send_logs)
       expect_any_instance_of(LogStash::Outputs::Keystone::KeystoneClient)
-        .to receive(:authenticate).with(complete_config['domain_id'],
-          complete_config['username'],
+        .to receive(:authenticate).with(complete_config['username'],
+          complete_config['user_domain_name'],
           complete_config['password'],
-          complete_config['project_name'])
+          complete_config['project_name'],
+          complete_config['project_domain_name'])
         .and_return(expired_token, valid_token)
       monasca_log_api = LogStash::Outputs::MonascaLogApi.new(complete_config)
       allow(monasca_log_api).to receive(:start_time_check)

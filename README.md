@@ -145,9 +145,10 @@ output {
     monasca_log_api_url => "http://192.168.10.4:5607/v3.0"
     keystone_api_url => "http://192.168.10.5:35357/v3"
     project_name => "cmm"
+    project_domain_name => "Default"
     username => "cmm-operator"
+    user_domain_name => "Default"
     password => "admin"
-    domain_id => "default"
   }
 }
 ```
@@ -161,10 +162,10 @@ output {
     keystone_api_url => "http://192.168.10.5:35357/v3"
     keystone_api_insecure => false
     project_name => "cmm"
-    username => "cmm-operator"
-    password => "admin"
-    user_domain_name => "Default"
     project_domain_name => "Default"
+    username => "cmm-operator"
+    user_domain_name => "Default"
+    password => "admin"
     dimensions => ["hostname: monasca", "ip:192.168.10.4"]
     num_of_logs => 125
     delay => 10

@@ -26,10 +26,11 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
   let (:token) { "f8cdafb7dce94444ad781a53ddaff693" }
   let (:valid_token) { {"token" => token,
     "expires_at" => valid_date } }
-  let (:domain_id) { "default" }
   let (:username) { "operator" }
+  let (:user_domain_name) { "Default" }
   let (:password) { "zPrHGl<IJtn=ux;{&T/nfXh=H" }
   let (:project_name) { "monasca" }
+  let (:project_domain_name) { "Default" }
   let (:auth_hash) {
     {
       "auth"=>{
@@ -37,7 +38,7 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
           "methods"=>["password"],
           "password"=>{
             "user"=>{
-              "domain"=>{"id"=>domain_id},
+              "domain"=>{"name"=>user_domain_name},
               "name"=>username,
               "password"=>password
             }
@@ -45,7 +46,7 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
         },
         "scope"=>{
           "project"=>{
-            "domain"=>{"id"=>domain_id},
+            "domain"=>{"name"=>project_domain_name},
             "name"=>project_name
           }
         }
@@ -120,7 +121,7 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
 
       keystone_client = LogStash::Outputs::Keystone::KeystoneClient
         .new(keystone_url)
-      keystone_client.authenticate(domain_id, username, password, project_name)
+      keystone_client.authenticate(username, user_domain_name, password, project_name, project_domain_name)
     end
 
     it 'then it should return a token' do
@@ -133,7 +134,7 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
       keystone_client = LogStash::Outputs::Keystone::KeystoneClient
         .new(keystone_url)
       token = keystone_client
-        .authenticate(domain_id, username, password, project_name)
+        .authenticate(username, user_domain_name, password, project_name, project_domain_name)
 
       expect(token[:token]).to eq(valid_token["token"])
       expect(token[:expires_at].to_s).to eq(valid_token["expires_at"].to_s)
@@ -150,7 +151,7 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
 
       keystone_client = LogStash::Outputs::Keystone::KeystoneClient
         .new(keystone_url)
-      keystone_client.authenticate(domain_id, username, password, project_name)
+      keystone_client.authenticate(username, user_domain_name, password, project_name, project_domain_name)
     end
 
     it 'then it should return nil' do
@@ -163,7 +164,7 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
       keystone_client = LogStash::Outputs::Keystone::KeystoneClient
         .new(keystone_url)
       expect(keystone_client
-        .authenticate(domain_id, username, password, project_name)).to eq(nil)
+        .authenticate(username, user_domain_name, password, project_name, project_domain_name)).to eq(nil)
     end
   end
 
