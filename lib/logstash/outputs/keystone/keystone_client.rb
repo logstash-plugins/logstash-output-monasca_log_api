@@ -39,8 +39,8 @@ module LogStash::Outputs
         end
       end
 
-      def authenticate(user_domain_name, username, password, project_name, project_domain_name)
-        auth_hash = generate_hash(project_domain_name, user_domain_name, username, password, project_name)
+      def authenticate(username, user_domain_name, password, project_name, project_domain_name)
+        auth_hash = generate_hash(username, user_domain_name, password, project_name, project_domain_name)
         post_header = {
               'Accept' => 'application/json',
               'Content-Type' => 'application/json',
@@ -58,7 +58,7 @@ module LogStash::Outputs
         @http.request(post_request)
       end
 
-      def generate_hash(user_domain_name, project_domain_name, username, password, project_name)
+      def generate_hash(username, user_domain_name, password, project_name, project_domain_name)
         {
           "auth"=>{
             "identity"=>{

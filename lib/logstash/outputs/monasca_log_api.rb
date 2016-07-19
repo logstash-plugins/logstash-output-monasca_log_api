@@ -166,7 +166,8 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
   def check_token
     token = LogStash::Outputs::Keystone::Token.instance
     token.request_new_token(
-      project_domain_id, username, password, project_name) unless token.valid?
+      user_domain_name, username, password,
+      project_name, project_domain_name) unless token.valid?
   end
 
   def start_time_check
