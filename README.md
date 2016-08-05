@@ -109,7 +109,7 @@ bin/plugin install --no-verify
 ```
 
 Verify installed plugins:
-With ``bin/plugin list`` you can check installed plugins. There should be ``logstash-output-monasca_log_api``.
+With ``bin/plugin list --verbose`` you can check installed plugins. There should be ``logstash-output-monasca_log_api``.
 
 ## Start logstash output plugin
 

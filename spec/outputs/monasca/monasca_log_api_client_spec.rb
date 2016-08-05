@@ -102,31 +102,42 @@ describe LogStash::Outputs::Monasca::MonascaLogApiClient do
       expect_any_instance_of(Cabin::Channel).to receive(:error)
 
       stub_request(:post, monasca_log_api_url_post)
-        .with(:headers => {
-          'Accept'=>'*/*',
-          'Content-Type'=>'application/json',
-          'User-Agent'=>'Ruby',
-          'X-Auth-Token'=>'f8cdafb7dce94444ad781a53ddaff693'})
+        .with(:headers =>
+        {
+          'Accept' => '*/*',
+          'Content-Type' => 'application/json',
+          'User-Agent' => 'Ruby',
+          'X-Auth-Token' => 'f8cdafb7dce94444ad781a53ddaff693'
+        })
+        .to_return(:status => 410)
+
+      client = LogStash::Outputs::Monasca::MonascaLogApiClient
+        .new(monasca_log_api_url)
+
+      client.send_logs(logs, token)
+    end
+  end
+
+  context 'when request failed with 401' do
+    it 'logs a warning and throw an exception' do
+      expect_any_instance_of(Cabin::Channel).to receive(:warn)
+
+      stub_request(:post, monasca_log_api_url_post)
+        .with(:headers =>
+        {
+          'Accept' => '*/*',
+          'Content-Type' => 'application/json',
+          'User-Agent' => 'Ruby',
+          'X-Auth-Token' => 'f8cdafb7dce94444ad781a53ddaff693'
+        })
         .to_return(:status => 401)
 
       client = LogStash::Outputs::Monasca::MonascaLogApiClient
         .new(monasca_log_api_url)
 
-      client.send_logs(logs, token)
+      expect { client.send_logs(logs, token) }.to raise_error(
+        LogStash::Outputs::Monasca::MonascaLogApiClient::InvalidTokenError
+      )
     end
   end
-
-  context 'when request throws an exception' do
-    it 'rescued the exception and logs a failure' do
-      expect_any_instance_of(Cabin::Channel).to receive(:warn)
-
-      stub_request(:post, monasca_log_api_url_post)
-        .to_raise(Errno::ECONNREFUSED)
-
-      client = LogStash::Outputs::Monasca::MonascaLogApiClient
-        .new(monasca_log_api_url)
-      client.send_logs(logs, token)
-    end
-  end
-
 end

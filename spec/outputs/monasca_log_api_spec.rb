@@ -108,6 +108,7 @@ describe 'outputs/monasca_log_api' do
   let (:password) { 'qweqwe' }
 
   let (:monasca_log_api_url) { 'http://192.168.10.4:5607/v3.0' }
+  let (:monasca_log_api_url_post) { monasca_log_api_url + "/logs" }
   let (:keystone_api_url) { 'http://192.168.10.5:5000/v3' }
 
   let (:complete_config) {
@@ -180,8 +181,8 @@ describe 'outputs/monasca_log_api' do
 
   let (:valid_date) { DateTime.now + Rational(5, 1440) }
   let (:expired_date) { DateTime.now - Rational(5, 1440) }
-  let (:token_id) { "f8cdafb7dce94444ad781a53ddaff693" }
-  let (:old_token_id) { "553ae6ea7d074f00a12750e4aa1dad50" }
+  let (:token_id) { 'f8cdafb7dce94444ad781a53ddaff693' }
+  let (:old_token_id) { '553ae6ea7d074f00a12750e4aa1dad50' }
 
   let (:valid_token) { {:token => token_id,
     :expires_at => valid_date } }
@@ -374,9 +375,11 @@ describe 'outputs/monasca_log_api' do
       monasca_log_api.multi_receive([event_without_dims])
 
       expect(monasca_log_api.instance_variable_get(:@logs)['logs'])
-        .to eq([{"message"=>"A graceful shutdown.",
-          "dimensions"=>{"path"=>"/opt/logstash-2.2.0/test.log",
-            "type"=>"test-type"}}])
+        .to eq([{ 'message' => 'A graceful shutdown.',
+                  'dimensions' => {
+                    'path' => '/opt/logstash-2.2.0/test.log',
+                    'type' => 'test-type' }
+                }])
     end
 
     it 'with one dimensions' do
@@ -390,9 +393,12 @@ describe 'outputs/monasca_log_api' do
       monasca_log_api.multi_receive([event_with_one_dim])
 
       expect(monasca_log_api.instance_variable_get(:@logs)['logs'])
-        .to eq([{"message"=>"A graceful shutdown.",
-          "dimensions"=>{"path"=>"/opt/logstash-2.2.0/test.log",
-            "type"=>"test-type", "service"=>"nova"}}])
+        .to eq([{ 'message' => 'A graceful shutdown.',
+                  'dimensions' => {
+                    'path' => '/opt/logstash-2.2.0/test.log',
+                    'type' => 'test-type',
+                    'service' => 'nova' }
+                }])
     end
 
     it 'with more dimensions' do
@@ -406,9 +412,30 @@ describe 'outputs/monasca_log_api' do
       monasca_log_api.multi_receive([event_with_more_dims])
 
       expect(monasca_log_api.instance_variable_get(:@logs)['logs'])
-        .to eq([{"message"=>"A graceful shutdown.",
-          "dimensions"=>{"path"=>"/opt/logstash-2.2.0/test.log",
-            "type"=>"test-type", "service"=>"nova", "priority"=>"high"}}])
+        .to eq([{ 'message' => 'A graceful shutdown.',
+                  'dimensions' => {
+                    'path' => '/opt/logstash-2.2.0/test.log',
+                    'type' => 'test-type',
+                    'service' => 'nova',
+                    'priority' => 'high' }
+                }])
+    end
+  end
+
+  context 'when sending logs raise exception' do
+    it 'logs a failure' do
+      expect_any_instance_of(Cabin::Channel).to receive(:error)
+
+      monasca_log_api = LogStash::Outputs::MonascaLogApi.new(complete_config)
+      expect_any_instance_of(LogStash::Outputs::Monasca::MonascaLogApiClient)
+        .to receive(:send_logs)
+        .and_raise(Errno::ETIMEDOUT)
+      expect_any_instance_of(LogStash::Outputs::Keystone::KeystoneClient)
+        .to receive(:authenticate).and_return(valid_token)
+
+      monasca_log_api.register
+      monasca_log_api.multi_receive([event, event])
+      expect { monasca_log_api.multi_receive([event]) }.to_not raise_error
     end
   end
 
@@ -439,12 +466,49 @@ describe 'outputs/monasca_log_api' do
       expect_any_instance_of(LogStash::Outputs::Monasca::MonascaLogApiClient)
         .to receive(:send_logs)
       expect_any_instance_of(LogStash::Outputs::Keystone::KeystoneClient)
-        .to receive(:authenticate).with(complete_config['username'],
+        .to receive(:authenticate).with(
+          complete_config['username'],
           complete_config['user_domain_name'],
           complete_config['password'],
           complete_config['project_name'],
           complete_config['project_domain_name'])
         .and_return(expired_token, valid_token)
+      monasca_log_api = LogStash::Outputs::MonascaLogApi.new(complete_config)
+      allow(monasca_log_api).to receive(:start_time_check)
+      monasca_log_api.register
+      expect(LogStash::Outputs::Keystone::Token.instance.id).to eq(old_token_id)
+      monasca_log_api.multi_receive([event, event, event])
+      expect(LogStash::Outputs::Keystone::Token.instance.id).to eq(token_id)
+    end
+
+    it 'if unauthorized, renew it' do
+      stub_request(:post, monasca_log_api_url_post)
+        .with(:headers =>
+        {
+          'Accept' => '*/*',
+          'Content-Type' => 'application/json',
+          'User-Agent' => 'Ruby',
+          'X-Auth-Token' => 'f8cdafb7dce94444ad781a53ddaff693'
+        })
+        .to_return(:status => 401)
+
+      expect_any_instance_of(LogStash::Outputs::Monasca::MonascaLogApiClient)
+        .to receive(:handle_response).exactly(5).times
+        .and_raise(
+          LogStash::Outputs::Monasca::MonascaLogApiClient::InvalidTokenError
+        )
+
+      expect_any_instance_of(LogStash::Outputs::Keystone::KeystoneClient)
+        .to receive(:authenticate).exactly(6).times
+        .with(
+          complete_config['username'],
+          complete_config['user_domain_name'],
+          complete_config['password'],
+          complete_config['project_name'],
+          complete_config['project_domain_name']
+        )
+        .and_return(expired_token, valid_token)
+
       monasca_log_api = LogStash::Outputs::MonascaLogApi.new(complete_config)
       allow(monasca_log_api).to receive(:start_time_check)
       monasca_log_api.register

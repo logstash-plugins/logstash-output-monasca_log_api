@@ -23,7 +23,7 @@ module LogStash::Outputs
   module Monasca
     class MonascaLogApiClient
 
-      def initialize(url, insecure=false)
+      def initialize(url, insecure = false)
         @logger = Cabin::Channel.get(LogStash)
         @uri = URI.parse(url)
         @http = Net::HTTP.new(@uri.host, @uri.port)
@@ -34,17 +34,12 @@ module LogStash::Outputs
       end
 
       def send_logs(logs, auth_token)
-        begin
-          post_header = {
-              'X-Auth-Token' => auth_token,
-              'Content-Type' => 'application/json',
-          }
-          response = request('/logs', post_header, logs.to_json)
-          handle_response(response)
-        rescue => e
-          @logger.warn('Sending event to monasca-log-api threw exception',
-            :exceptionew => e)
-        end
+        post_header = {
+          'X-Auth-Token' => auth_token,
+          'Content-Type' => 'application/json',
+        }
+        response = request('/logs', post_header, logs.to_json)
+        handle_response(response)
       end
 
       private
@@ -56,16 +51,20 @@ module LogStash::Outputs
         @http.request(post_request)
       end
 
+      class InvalidTokenError < StandardError; end
+
       def handle_response(response)
         case response
         when Net::HTTPNoContent
-          @logger.debug("Successfully sent logs")
+          @logger.debug('Successfully sent logs')
+        when Net::HTTPUnauthorized # HTTP code: 401
+          @logger.warn("Invalid token. Response=#{response}")
+          raise InvalidTokenError, "Invalid token. Response=#{response}"
         else
           # TODO: Handle logs which could not be sent
           @logger.error("Failed to send logs. Response=#{response}")
         end
       end
-
     end
   end
 end

@@ -28,11 +28,11 @@ module LogStash::Outputs
         token = @keystone_client
           .authenticate(username, user_domain_name, password, project_name, project_domain_name)
         set_token(token[:token], token[:expires_at])
-        @logger.info("New token requested")
+        @logger.info('New token requested')
         @logger.debug("token=#{@id}, expire_at=#{@expires_at}")
       end
 
-      def set_token id, expires_at
+      def set_token(id, expires_at)
         @id = id
         @expires_at = expires_at
       end
@@ -49,12 +49,11 @@ module LogStash::Outputs
       def valid?
         token_valid = true
         now = DateTime.now + Rational(1, 1440)
-        if @id.nil? or now >= @expires_at
+        if @id.nil? || now >= @expires_at
           token_valid = false
         end
         token_valid
       end
-
     end
   end
 end

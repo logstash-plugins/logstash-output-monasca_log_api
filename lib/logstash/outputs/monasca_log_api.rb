@@ -102,7 +102,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
 
     # if new log would exceed the bytesize then send logs without the new log
     if @logs[JSON_LOGS] and (logs_bytesize + log_bytesize) > max_data_size_kb
-      @logger.debug("bytesize reached. Sending logs")
+      @logger.debug('bytesize reached. Sending logs')
       @mutex.synchronize do
         send_logs
         add_log log
@@ -112,7 +112,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
     # if the new log would reach the maximum bytesize or the maximum allowed
     # number of sendable logs is reached
     elsif @logs[JSON_LOGS] and (@logs[JSON_LOGS].size + 1 >= num_of_logs)
-      @logger.debug("bytesize or maximum number of logs reached. Sending logs")
+      @logger.debug('bytesize or maximum number of logs reached. Sending logs')
       @mutex.synchronize do
         add_log log
         send_logs
@@ -135,7 +135,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
       event.to_hash['dimensions']
     type = event.to_hash['type'] if event.to_hash['type']
 
-    log = { "message" => message, "dimensions" => { "path" => path }}
+    log = { 'message' => message, 'dimensions' => { 'path' => path }}
     log[JSON_DIMS]['type'] = type if type
     if local_dims
       begin
@@ -178,7 +178,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
 
           if @logs[JSON_LOGS] and (@logs[JSON_LOGS].size > 0) and
             ((Time.now - @start_time) >= elapsed_time_sec)
-            @logger.debug("Time elapsed. Sending logs")
+            @logger.debug('Time elapsed. Sending logs')
             @mutex.synchronize do
               send_logs
             end
@@ -200,17 +200,37 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
   end
 
   def send_logs
-    if @logs[JSON_LOGS] and @logs[JSON_LOGS].size > 0
+    if @logs[JSON_LOGS] && !@logs[JSON_LOGS].empty?
       check_token
-      token_id = LogStash::Outputs::Keystone::Token.instance.id
+      token = LogStash::Outputs::Keystone::Token.instance
       @logger.debug("Sending #{@logs[JSON_LOGS].size} logs")
-      @monasca_log_api_client.send_logs(@logs, token_id)
+      retry_tries = 5
+      begin
+        tries ||= retry_tries
+        @monasca_log_api_client.send_logs(@logs, token.id)
+      rescue LogStash::Outputs::Monasca::MonascaLogApiClient::InvalidTokenError => e
+        tries -= 1
+        if tries > 0
+          @logger.info("Unauthorized: #{e}. Requesting new token.")
+          token.request_new_token(
+            username, user_domain_name, password,
+            project_name, project_domain_name
+          )
+          retry
+        else
+          @logger.error("Unauthorized: #{e}. Requesting new token failed "\
+                        "after #{retry_tries} retries.")
+        end
+      rescue => e
+        @logger.error('Sending event to monasca-log-api threw exception',
+                      :exceptionew => e)
+      end
       @logs.clear
       initialize_logs_object
     end
   end
 
-  def add_log log
+  def add_log(log)
     @logs[JSON_LOGS].push(log)
     if @logs[JSON_LOGS].size == 1
       @start_time = Time.now
