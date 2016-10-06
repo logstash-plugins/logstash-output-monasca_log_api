@@ -17,7 +17,6 @@
 require 'logstash/outputs/base'
 require 'logstash/namespace'
 require 'logstash/codecs/base'
-require 'vine'
 require 'thread'
 
 # relative requirements
