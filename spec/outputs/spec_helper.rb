@@ -16,6 +16,9 @@
 require 'yaml'
 
 require 'simplecov'
+require 'simplecov-rcov'
+require 'rspec_junit_formatter'
+SimpleCov.formatter = SimpleCov::Formatter::RcovFormatter
 SimpleCov.start do
   add_filter '/test/'
   add_filter '/config/'
