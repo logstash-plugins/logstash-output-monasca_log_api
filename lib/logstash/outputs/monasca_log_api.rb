@@ -70,6 +70,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
       .new monasca_log_api_url, monasca_log_api_insecure
     @logs = Hash.new
     @start_time = nil
+    @cross_tenant = nil
     init_token
     initialize_logs_object
     start_time_check
@@ -95,36 +96,46 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
   end
 
   def encode(event)
-    log = generate_log_from_event(event)
+    log, cross_tenant = generate_log_from_event(event)
     log_bytesize = bytesize_of(log)
     logs_bytesize = bytesize_of(@logs)
 
-    # if new log would exceed the bytesize then send logs without the new log
-    if @logs[JSON_LOGS] and (logs_bytesize + log_bytesize) > max_data_size_kb
-      @logger.debug('bytesize reached. Sending logs')
-      @mutex.synchronize do
-        send_logs
-        add_log log
-      end
-      return
+    if @logs[JSON_LOGS]
+      # if new cross_tenant appears request has to be sent
+      if @cross_tenant != cross_tenant
+        @logger.debug('new cross_tenant. Sending logs.')
+        @mutex.synchronize do
+          send_logs
+          add_log log, cross_tenant
+        end
+        return
 
-    # if the new log would reach the maximum bytesize or the maximum allowed
-    # number of sendable logs is reached
-    elsif @logs[JSON_LOGS] and (@logs[JSON_LOGS].size + 1 >= num_of_logs)
-      @logger.debug('bytesize or maximum number of logs reached. Sending logs')
-      @mutex.synchronize do
-        add_log log
-        send_logs
+      # if new log would exceed the bytesize then send logs without the new log
+      elsif (logs_bytesize + log_bytesize) > max_data_size_kb
+        @logger.debug('bytesize reached. Sending logs')
+        @mutex.synchronize do
+          send_logs
+          add_log log, cross_tenant
+        end
+        return
+
+      # if the new log would reach the maximum bytesize or the maximum allowed
+      # number of sendable logs is reached
+      elsif (@logs[JSON_LOGS].size + 1 >= num_of_logs)
+        @logger.debug('bytesize or maximum number of logs reached. Sending logs')
+        @mutex.synchronize do
+          add_log log, cross_tenant
+          send_logs
+        end
+        return
       end
-      return
+    end
 
     # still free space to collect logs
-    else
-      @mutex.synchronize do
-        add_log log
-      end
-      return
+    @mutex.synchronize do
+      add_log log, cross_tenant
     end
+    return
   end
 
   def generate_log_from_event(event)
@@ -133,6 +144,8 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
     local_dims = JSON.parse(event.to_hash['dimensions'].to_s) if
       event.to_hash['dimensions']
     type = event.to_hash['type'] if event.to_hash['type']
+    cross_tenant = event.to_hash['cross_tenant'] if
+      event.to_hash['cross_tenant']
 
     log = { 'message' => message, 'dimensions' => { 'path' => path }}
     log[JSON_DIMS]['type'] = type if type
@@ -147,7 +160,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
         log[JSON_DIMS][local_dims[0].strip] = local_dims[1].strip
       end
     end
-    log
+    return log, cross_tenant
   end
 
   def initialize_logs_object
@@ -159,6 +172,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
       @logs = {}
       @logs[JSON_DIMS] = global_dims unless global_dims.empty?
       @logs[JSON_LOGS] = []
+      @cross_tenant = nil
     end
   end
 
@@ -206,7 +220,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
       retry_tries = 5
       begin
         tries ||= retry_tries
-        @monasca_log_api_client.send_logs(@logs, token.id)
+        @monasca_log_api_client.send_logs(@logs, token.id, @cross_tenant)
       rescue LogStash::Outputs::Monasca::MonascaLogApiClient::InvalidTokenError => e
         tries -= 1
         if tries > 0
@@ -229,11 +243,12 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
     end
   end
 
-  def add_log(log)
+  def add_log(log, cross_tenant)
     @logs[JSON_LOGS].push(log)
     if @logs[JSON_LOGS].size == 1
       @start_time = Time.now
     end
+    @cross_tenant = cross_tenant
   end
 
   def check_config

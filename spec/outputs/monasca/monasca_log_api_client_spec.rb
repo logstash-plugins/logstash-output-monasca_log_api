@@ -23,6 +23,9 @@ describe LogStash::Outputs::Monasca::MonascaLogApiClient do
   let (:monasca_log_api_url_https) { 'https://monasca-log-api:5607/v3.0' }
   let (:monasca_log_api_url_post) { monasca_log_api_url + "/logs" }
   let (:token) { "f8cdafb7dce94444ad781a53ddaff693" }
+  let (:cross_tenant) { "396ffadd35a187da44449ecd7bfadc8f" }
+  let (:monasca_log_api_url_post_with_tenant) { monasca_log_api_url_post +
+    "?tenant_id=" + cross_tenant}
   let (:logs) {
     {
       "dimensions" =>
@@ -75,7 +78,27 @@ describe LogStash::Outputs::Monasca::MonascaLogApiClient do
       client = LogStash::Outputs::Monasca::MonascaLogApiClient
         .new(monasca_log_api_url)
 
-      client.send_logs(logs, token)
+      client.send_logs(logs, token, nil)
+    end
+  end
+
+  context 'when requesting to monasca-log-api with cross_tenant' do
+    it 'sends x-auth-token and content-type in header, logs in body,'\
+        ' and tenant_id in query parameter' do
+      expect_any_instance_of(Cabin::Channel).to_not receive(:error)
+
+      stub_request(:post, monasca_log_api_url_post_with_tenant)
+        .with(:headers => {
+          'Accept'=>'*/*',
+          'Content-Type'=>'application/json',
+          'User-Agent'=>'Ruby',
+          'X-Auth-Token'=>'f8cdafb7dce94444ad781a53ddaff693'})
+        .to_return(:status => 204)
+
+      client = LogStash::Outputs::Monasca::MonascaLogApiClient
+        .new(monasca_log_api_url)
+
+      client.send_logs(logs, token, cross_tenant)
     end
   end
 
@@ -114,7 +137,7 @@ describe LogStash::Outputs::Monasca::MonascaLogApiClient do
       client = LogStash::Outputs::Monasca::MonascaLogApiClient
         .new(monasca_log_api_url)
 
-      client.send_logs(logs, token)
+      client.send_logs(logs, token, nil)
     end
   end
 
@@ -135,7 +158,7 @@ describe LogStash::Outputs::Monasca::MonascaLogApiClient do
       client = LogStash::Outputs::Monasca::MonascaLogApiClient
         .new(monasca_log_api_url)
 
-      expect { client.send_logs(logs, token) }.to raise_error(
+      expect { client.send_logs(logs, token, nil) }.to raise_error(
         LogStash::Outputs::Monasca::MonascaLogApiClient::InvalidTokenError
       )
     end
