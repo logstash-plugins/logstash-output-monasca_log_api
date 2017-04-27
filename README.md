@@ -36,7 +36,7 @@ rvm install jruby
 #### Clone project
 
 ```bash
-git clone https://github.com/FujitsuEnablingSoftwareTechnologyGmbH/logstash-output-monasca_api.git
+git clone https://github.com/logstash-plugins/logstash-output-monasca_log_api.git
 ```
 
 #### Use jruby
@@ -202,17 +202,18 @@ input {
   }
 ```
 
-#### Cross tenant function
+#### Cross tenant functionality
 
-The output plugin is able to post data on behalf of a tenant to the monasca-log-api.
-For example you can use a user of tenant X to send logs to the monasca-log-api for another tenant Y. The logs will be stored for the tenant Y. And only users of tenant Y will see the logs.
+The output plugin is able to post data on behalf of another tenant to the monasca-log-api.
+For example you can use a user of tenant X to send logs to the monasca-log-api for another tenant Y. The logs will be stored in the index of tenant Y.
 
 To use this functionality you need to pass through another field called ```cross_tenant``` to each incoming event. This can be done by using the ```add_field``` for file [input plugin](https://www.elastic.co/guide/en/logstash/2.4/plugins-inputs-file.html). Example configuration:
 
 ```bash
 input {
   file {
-    add_field => { "dimensions" => { "service" => "neutron" "component" => "firewall" } "cross_tenant" => "903ac629d8424dc39ae928a5fff338e7" }
+    add_field => { "dimensions" => { "service" => "neutron" "component" => "firewall" }}
+    add_field => { "cross_tenant" => "903ac629d8424dc39ae928a5fff338e7" }
     path => "/var/log/neutron/firewall.log"
   }
 }
