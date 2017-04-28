@@ -1,6 +1,8 @@
 # logstash-output-monasca_log_api
 This module is a logstash-output-plugin for the Monasca Log Api.
 
+Compatible logstash version: [Logstash 2.3.4](https://download.elastic.co/logstash/logstash/logstash-2.3.4.tar.gz)
+
 ## Get latest stable version
 https://rubygems.org/gems/logstash-output-monasca_log_api
 
@@ -31,23 +33,23 @@ source /home/vagrant/.rvm/scripts/rvm
 rvm install jruby
 ```
 
-### Clone project
+#### Clone project
 
 ```bash
-git clone https://github.com/FujitsuEnablingSoftwareTechnologyGmbH/logstash-output-monasca_api.git
+git clone https://github.com/logstash-plugins/logstash-output-monasca_log_api.git
 ```
 
-### Use jruby
+#### Use jruby
 ```bash
 rvm use jruby
 ```
 
-### Install bundler
+#### Install bundler
 ```bash
 gem install bundler
 ```
 
-### Fetch dependencies
+#### Fetch dependencies
 ```bash
 bundle install
 ```
@@ -92,20 +94,12 @@ gem build logstash-output-monasca_log_api.gemspec
 
 ### Deploy Gemfile to logstash
 
-* [Download logstash](https://download.elastic.co/logstash/logstash/logstash-2.2.2.tar.gz) (>=2.2.0)
+* [Download logstash](https://download.elastic.co/logstash/logstash/logstash-2.3.4.tar.gz) (>=2.3.4)
 * Extract logstash and navigate into the folder
-* Add this line to the Gemfile
-
-  ```bash
-  gem "logstash-output-monasca_log_api", :path => "/vagrant_home/cloudmonitor/logstash-output-monasca_log_api"
-  ```
-
-  * __logstash-output-monasca_log_api__ = name of the gem
-  * __/vagrant_home/cloudmonitor/logstash-output-monasca_log_api__ = Path to git workspace
 
 Run this command from logstash folder to install the plugin
 ```bash
-bin/plugin install --no-verify
+bin/logstash-plugin install /my/logstash/plugins/logstash-output-monasca_log_api-1.0.0.gem
 ```
 
 Verify installed plugins:
@@ -207,6 +201,25 @@ input {
     }
   }
 ```
+
+#### Cross tenant functionality
+
+The output plugin is able to post data on behalf of another tenant to the monasca-log-api.
+For example you can use a user of tenant X to send logs to the monasca-log-api for another tenant Y. The logs will be stored in the index of tenant Y.
+
+To use this functionality you need to pass through another field called ```cross_tenant``` to each incoming event. This can be done by using the ```add_field``` for file [input plugin](https://www.elastic.co/guide/en/logstash/2.4/plugins-inputs-file.html). Example configuration:
+
+```bash
+input {
+  file {
+    add_field => { "dimensions" => { "service" => "neutron" "component" => "firewall" }}
+    add_field => { "cross_tenant" => "903ac629d8424dc39ae928a5fff338e7" }
+    path => "/var/log/neutron/firewall.log"
+  }
+}
+```
+
+**Important:** The user which is sending the data on behalf of other tenants requires a specific role. This role is defined in the configuration file of the monasca-log-api as ```delegate_roles```.
 
 ## Open tasks
 * Language translations (Replace hardcoded String messages with a configuration/language file)

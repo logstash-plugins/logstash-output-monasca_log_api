@@ -33,20 +33,28 @@ module LogStash::Outputs
         end
       end
 
-      def send_logs(logs, auth_token)
+      def send_logs(logs, auth_token, cross_tenant)
         post_header = {
           'X-Auth-Token' => auth_token,
           'Content-Type' => 'application/json',
         }
-        response = request('/logs', post_header, logs.to_json)
+        params = Hash.new
+        if !cross_tenant.nil?
+          params[:tenant_id] = cross_tenant
+        end
+        response = request('/logs', post_header, logs.to_json, params)
         handle_response(response)
       end
 
       private
 
-      def request(path, header, body)
+      def request(path, header, body, params)
         @logger.debug('Sending data to ', :url => @uri.to_s)
-        post_request = Net::HTTP::Post.new(@uri.request_uri + path, header)
+        uri = URI::HTTP.build( :path => @uri.path + path)
+        if !params.empty?
+          uri.query = URI.encode_www_form(params)
+        end
+        post_request = Net::HTTP::Post.new(uri.request_uri, header)
         post_request.body = body
         @http.request(post_request)
       end
