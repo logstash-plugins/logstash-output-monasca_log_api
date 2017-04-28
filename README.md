@@ -1,4 +1,7 @@
 # logstash-output-monasca_log_api
+
+[![Travis Build Status](https://travis-ci.org/logstash-plugins/logstash-output-monasca_log_api.svg)](https://travis-ci.org/logstash-plugins/logstash-output-monasca_log_api)
+
 This module is a logstash-output-plugin for the Monasca Log Api.
 
 Compatible logstash version: [Logstash 2.3.4](https://download.elastic.co/logstash/logstash/logstash-2.3.4.tar.gz)
