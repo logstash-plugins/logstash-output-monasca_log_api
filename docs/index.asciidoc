@@ -14,7 +14,7 @@ END - GENERATED VARIABLES, DO NOT EDIT!
 
 [id="plugins-{type}-{plugin}"]
 
-=== Monasca_log_api
+=== Monasca_log_api output plugin
 
 include::{include_path}/plugin_header.asciidoc[]
 
