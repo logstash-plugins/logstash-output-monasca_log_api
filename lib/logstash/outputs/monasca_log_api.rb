@@ -140,14 +140,18 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
 
   def generate_log_from_event(event)
     message = event.to_hash['message']
-    path = event.to_hash['path']
+    path = event.to_hash['path'] if event.to_hash['path']
+    stream = event.to_hash['stream'] if event.to_hash['stream']
     local_dims = JSON.parse(event.to_hash['dimensions'].to_s) if
       event.to_hash['dimensions']
     type = event.to_hash['type'] if event.to_hash['type']
     cross_tenant = event.to_hash['cross_tenant'] if
       event.to_hash['cross_tenant']
 
-    log = { 'message' => message, 'dimensions' => { 'path' => path }}
+    log = { 'message' => message, 'dimensions' => {} }
+    path && log['dimensions']['path'] = path
+    stream && log['dimensions']['stream'] = stream
+
     log[JSON_DIMS]['type'] = type if type
     if local_dims
       begin
