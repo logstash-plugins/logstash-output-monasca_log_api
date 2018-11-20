@@ -208,6 +208,10 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
   end
 
   def stop_time_check
+    #ensure that entries buffered in queue will be  handled before stop
+    @mutex.synchronize do
+      send_logs
+    end
     @time_thread.kill() if @time_thread
     @logger.info('Stopped time_check thread')
   end
