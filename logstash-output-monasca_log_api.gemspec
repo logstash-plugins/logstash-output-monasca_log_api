@@ -26,6 +26,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov', '~> 0.10'
   s.add_development_dependency 'simplecov-rcov', '~> 0.2.0'
   s.add_development_dependency 'rspec_junit_formatter', '~> 0.2.3'
-  s.add_development_dependency 'rubocop', '~> 0.37.2'
+  s.add_development_dependency 'rubocop', ">= 0.60.0"
   s.add_development_dependency 'webmock', '~> 2.0'
 end
