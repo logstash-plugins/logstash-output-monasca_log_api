@@ -209,6 +209,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
 
   def stop_time_check
     #ensure that entries buffered in queue will be  handled before stop
+    @stopping = true
     @mutex.synchronize do
       send_logs
     end
@@ -226,6 +227,7 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
       token = LogStash::Outputs::Keystone::Token.instance
       @logger.debug("Sending #{@logs[JSON_LOGS].size} logs")
       retry_tries = 5
+      attempt = 0
       begin
         tries ||= retry_tries
         @monasca_log_api_client.send_logs(@logs, token.id, @cross_tenant)
@@ -241,10 +243,19 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
         else
           @logger.error("Unauthorized: #{e}. Requesting new token failed "\
                         "after #{retry_tries} retries.")
+
+          sleep_for_retry(60)
+          retry
         end
       rescue => e
-        @logger.error('Sending event to monasca-log-api threw exception',
+        attempt += 1
+        sleep_for = get_sleep_time(attempt)
+        @logger.error("Sending event to monasca-log-api threw exception, "\
+                      "will sleep for #{sleep_for} seconds.",
                       :exceptionew => e)
+
+        sleep_for_retry(sleep_for)
+        retry
       end
       @logs.clear
       initialize_logs_object
@@ -269,5 +280,14 @@ class LogStash::Outputs::MonascaLogApi < LogStash::Outputs::Base
       err = "Value of #{bad_val.join(', ')} need to be bigger than 0"
       raise LogStash::ConfigurationError, err
     end
+  end
+
+  def get_sleep_time(attempt)
+    sleep_for = attempt**2
+    sleep_for <= 60 ? sleep_for : 60
+  end
+
+  def sleep_for_retry(duration)
+    Stud.stoppable_sleep(duration) { @stopping }
   end
 end
