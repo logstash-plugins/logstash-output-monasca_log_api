@@ -475,4 +475,6 @@ describe 'outputs/monasca_log_api' do
     end
   end
 
+  # TODO add testing graceful recovery from exceptions
+
 end

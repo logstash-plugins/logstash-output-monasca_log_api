@@ -231,3 +231,4 @@ Monasca API fails and will retry the request until successful.
 
 ## Open tasks
 * Language translations (Replace hardcoded String messages with a configuration/language file)
+* Unit tests for failed requests handling
