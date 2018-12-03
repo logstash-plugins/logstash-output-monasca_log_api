@@ -224,6 +224,10 @@ input {
 
 **Important:** The user which is sending the data on behalf of other tenants requires a specific role. This role is defined in the configuration file of the monasca-log-api as ```delegate_roles```.
 
+#### Exception handling
+
+This output plugin will sleep for maximum 60 seconds after the request to
+Monasca API fails and will retry the request until successful.
+
 ## Open tasks
 * Language translations (Replace hardcoded String messages with a configuration/language file)
-* Exception handling (monasca-api requests)
