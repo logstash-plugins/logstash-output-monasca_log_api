@@ -422,23 +422,6 @@ describe 'outputs/monasca_log_api' do
     end
   end
 
-  context 'when sending logs raise exception' do
-    it 'logs a failure' do
-      expect_any_instance_of(Cabin::Channel).to receive(:error)
-
-      monasca_log_api = LogStash::Outputs::MonascaLogApi.new(complete_config)
-      expect_any_instance_of(LogStash::Outputs::Monasca::MonascaLogApiClient)
-        .to receive(:send_logs)
-        .and_raise(Errno::ETIMEDOUT)
-      expect_any_instance_of(LogStash::Outputs::Keystone::KeystoneClient)
-        .to receive(:authenticate).and_return(valid_token)
-
-      monasca_log_api.register
-      monasca_log_api.multi_receive([event, event])
-      expect { monasca_log_api.multi_receive([event]) }.to_not raise_error
-    end
-  end
-
   context 'after sending logs' do
     it 'clears collected logs' do
       expect_any_instance_of(LogStash::Outputs::Monasca::MonascaLogApiClient)
@@ -480,42 +463,6 @@ describe 'outputs/monasca_log_api' do
       monasca_log_api.multi_receive([event, event, event])
       expect(LogStash::Outputs::Keystone::Token.instance.id).to eq(token_id)
     end
-
-    it 'if unauthorized, renew it' do
-      stub_request(:post, monasca_log_api_url_post)
-        .with(:headers =>
-        {
-          'Accept' => '*/*',
-          'Content-Type' => 'application/json',
-          'User-Agent' => 'Ruby',
-          'X-Auth-Token' => 'f8cdafb7dce94444ad781a53ddaff693'
-        })
-        .to_return(:status => 401)
-
-      expect_any_instance_of(LogStash::Outputs::Monasca::MonascaLogApiClient)
-        .to receive(:handle_response).exactly(5).times
-        .and_raise(
-          LogStash::Outputs::Monasca::MonascaLogApiClient::InvalidTokenError
-        )
-
-      expect_any_instance_of(LogStash::Outputs::Keystone::KeystoneClient)
-        .to receive(:authenticate).exactly(6).times
-        .with(
-          complete_config['username'],
-          complete_config['user_domain_name'],
-          complete_config['password'],
-          complete_config['project_name'],
-          complete_config['project_domain_name']
-        )
-        .and_return(expired_token, valid_token)
-
-      monasca_log_api = LogStash::Outputs::MonascaLogApi.new(complete_config)
-      allow(monasca_log_api).to receive(:start_time_check)
-      monasca_log_api.register
-      expect(LogStash::Outputs::Keystone::Token.instance.id).to eq(old_token_id)
-      monasca_log_api.multi_receive([event, event, event])
-      expect(LogStash::Outputs::Keystone::Token.instance.id).to eq(token_id)
-    end
   end
 
   context 'when stopping plugin' do
@@ -527,5 +474,7 @@ describe 'outputs/monasca_log_api' do
       monasca_log_api.close
     end
   end
+
+  # TODO add testing graceful recovery from exceptions
 
 end
