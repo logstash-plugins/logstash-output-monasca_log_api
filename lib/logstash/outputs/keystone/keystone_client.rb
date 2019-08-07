@@ -65,7 +65,7 @@ module LogStash::Outputs
               "methods"=>["password"],
               "password"=>{
                 "user"=>{
-                  "domain"=>{"name"=>user_domain_name},
+                  "domain"=>{"id"=>user_domain_name},
                   "name"=>username,
                   "password"=>password
                 }
@@ -73,7 +73,7 @@ module LogStash::Outputs
             },
             "scope"=>{
               "project"=>{
-                "domain"=>{"name"=>project_domain_name},
+                "domain"=>{"id"=>project_domain_name},
                 "name"=>project_name
               }
             }

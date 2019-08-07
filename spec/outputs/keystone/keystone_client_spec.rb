@@ -38,7 +38,7 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
           "methods"=>["password"],
           "password"=>{
             "user"=>{
-              "domain"=>{"name"=>user_domain_name},
+              "domain"=>{"id"=>user_domain_name},
               "name"=>username,
               "password"=>password
             }
@@ -46,7 +46,7 @@ describe LogStash::Outputs::Keystone::KeystoneClient do
         },
         "scope"=>{
           "project"=>{
-            "domain"=>{"name"=>project_domain_name},
+            "domain"=>{"id"=>project_domain_name},
             "name"=>project_name
           }
         }
