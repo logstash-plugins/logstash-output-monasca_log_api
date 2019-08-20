@@ -15,6 +15,7 @@
 # encoding: utf-8
 
 require_relative 'spec_helper'
+require 'stfu'
 
 describe 'outputs/monasca_log_api' do
 
@@ -195,11 +196,13 @@ describe 'outputs/monasca_log_api' do
     token.set_token nil, nil
   end
 
-  context 'when initializing' do
-
-    it 'without configuration, then raise error' do
-      expect {LogStash::Plugin.lookup('output', 'monasca_log_api')
-        .new(empty_config)}.to raise_error(LogStash::ConfigurationError)
+    context 'when initializing' do
+      it 'without configuration, then raise error' do
+        Stfu.stfu do
+          expect { LogStash::Plugin.lookup('output', 'monasca_log_api')
+                       .new(empty_config) }.to raise_error(LogStash::ConfigurationError)
+          end
+      end
     end
 
     it 'with minimal configuration, then use defaults' do
