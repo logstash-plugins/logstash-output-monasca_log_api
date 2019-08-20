@@ -12,4 +12,4 @@ matrix:
 install: true
 script: ci/build.sh
 jdk: oraclejdk9
-before_install: gem install bundler -v '< 2'
+before_install: gem install bundler
