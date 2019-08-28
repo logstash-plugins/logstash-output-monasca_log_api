@@ -18,6 +18,7 @@ require 'logstash/environment'
 require 'logger'
 require 'json'
 require 'net/http'
+require 'cabin'
 
 require_relative './token'
 

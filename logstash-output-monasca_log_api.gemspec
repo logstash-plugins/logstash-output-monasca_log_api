@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'logstash-output-monasca_log_api'
-  s.version         = '1.0.4'
+  s.version         = '2.0.0'
   s.licenses = ['Apache-2.0']
   s.summary = 'This gem is a logstash output plugin to connect via http to monasca-log-api.'
   s.description = 'This gem is a logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/plugin install gemname. This gem is not a stand-alone program'
@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.metadata = { 'logstash_plugin' => 'true', 'logstash_group' => 'output' }
 
   # Gem dependencies
-  s.add_runtime_dependency 'logstash-core', '~> 7.1'
+  s.add_runtime_dependency 'logstash-core', '>= 7.0'
   s.add_runtime_dependency 'logstash-codec-plain', '~> 3.0'
   s.add_runtime_dependency 'logstash-codec-json', '~> 3.0'
   s.add_runtime_dependency 'logstash-codec-multiline', '~> 3.0'
