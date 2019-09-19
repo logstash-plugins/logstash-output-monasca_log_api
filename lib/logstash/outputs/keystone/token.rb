@@ -25,11 +25,33 @@ module LogStash::Outputs
       attr_accessor :id, :expires_at, :keystone_client
 
       def request_new_token(username, user_domain_name, password, project_name, project_domain_name)
-        token = @keystone_client
-          .authenticate(username, user_domain_name, password, project_name, project_domain_name)
-        set_token(token[:token], token[:expires_at])
+        attempt = 0
+        begin
+          @logger.info("Connecting to keystone, attempt no. #{attempt}")
+          token = @keystone_client
+                      .authenticate(username, user_domain_name, password, project_name, project_domain_name)
+          set_token(token[:token], token[:expires_at])
+        rescue => e
+          attempt += 1
+          sleep_for = get_sleep_time(attempt)
+          @logger.error("Sending event to keystone threw exception, "\
+                      "will sleep for #{sleep_for} seconds.",
+                        :exceptionew => e)
+
+          sleep_for_retry(sleep_for)
+          retry
+        end
         @logger.info('New token requested')
         @logger.debug("token=#{@id}, expire_at=#{@expires_at}")
+      end
+
+      def get_sleep_time(attempt)
+        sleep_for = attempt**2
+        sleep_for <= 60 ? sleep_for : 60
+      end
+
+      def sleep_for_retry(duration)
+        Stud.stoppable_sleep(duration) { @stopping }
       end
 
       def set_token(id, expires_at)
