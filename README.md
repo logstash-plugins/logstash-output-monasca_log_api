@@ -4,7 +4,7 @@
 
 This module is a logstash-output-plugin for the Monasca Log Api.
 
-Compatible logstash version: [Logstash 2.3.4](https://download.elastic.co/logstash/logstash/logstash-2.3.4.tar.gz)
+Compatible logstash version: [Logstash 7.x](https://www.elastic.co/downloads/logstash)
 
 ## Get latest stable version
 https://rubygems.org/gems/logstash-output-monasca_log_api
