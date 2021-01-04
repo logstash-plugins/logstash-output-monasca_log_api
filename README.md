@@ -1,6 +1,6 @@
 # logstash-output-monasca_log_api
 
-[![Travis Build Status](https://travis-ci.org/logstash-plugins/logstash-output-monasca_log_api.svg)](https://travis-ci.org/logstash-plugins/logstash-output-monasca_log_api)
+[![Travis Build Status](https://travis-ci.com/logstash-plugins/logstash-output-monasca_log_api.svg)](https://travis-ci.com/logstash-plugins/logstash-output-monasca_log_api)
 
 This module is a logstash-output-plugin for the Monasca Log Api.
 
