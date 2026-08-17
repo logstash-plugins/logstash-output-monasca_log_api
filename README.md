@@ -1,6 +1,6 @@
 # logstash-output-monasca_log_api
 
-[![Travis Build Status](https://travis-ci.com/logstash-plugins/logstash-output-monasca_log_api.svg)](https://travis-ci.com/logstash-plugins/logstash-output-monasca_log_api)
+[![Unit Tests](https://github.com/logstash-plugins/logstash-output-monasca_log_api/actions/workflows/unit-tests.yml/badge.svg?branch=main)](https://github.com/logstash-plugins/logstash-output-monasca_log_api/actions/workflows/unit-tests.yml)
 
 This module is a logstash-output-plugin for the Monasca Log Api.
 
